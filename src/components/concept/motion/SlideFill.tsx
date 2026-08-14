@@ -5,13 +5,20 @@ import { ArrowUpRight } from "lucide-react";
 import { Magnetic } from "./Magnetic";
 import { cn } from "@/lib/utils";
 
-type Variant = "ember" | "outline" | "ghost";
+type Variant = "primary" | "glass" | "ghost";
 type Size = "md" | "lg";
 
+/**
+ * Violet carries the primary action — on a light page it is the only fill
+ * with enough contrast for uppercase label text. Citrus stays reserved for
+ * prices so the two never compete.
+ */
 const VARIANTS: Record<Variant, string> = {
-  ember: "bg-ember text-plum hover:brightness-105",
-  outline: "bg-transparent text-cream ring-1 ring-inset ring-cream/30 hover:ring-cream/60",
-  ghost: "bg-transparent text-cream hover:text-ember",
+  primary:
+    "bg-royal text-white shadow-[0_14px_34px_-14px_rgba(69,54,214,0.75)] hover:bg-rich hover:shadow-[0_18px_40px_-14px_rgba(69,54,214,0.85)]",
+  glass:
+    "glass text-ink hover:bg-white/85",
+  ghost: "bg-transparent text-ink/70 hover:text-royal",
 };
 
 const SIZES: Record<Size, string> = {
@@ -33,7 +40,7 @@ interface SlideFillProps extends Omit<ComponentProps<"a">, "className" | "childr
  */
 export function SlideFill({
   children,
-  variant = "ember",
+  variant = "primary",
   size = "md",
   arrow = false,
   magnetic = true,
@@ -57,10 +64,10 @@ export function SlideFill({
           strokeWidth={2}
         />
       )}
-      {variant === "ember" && (
+      {variant === "primary" && (
         <span
           aria-hidden="true"
-          className="absolute inset-0 origin-left scale-x-0 bg-white/15 transition-transform duration-500 ease-out group-hover/sf:scale-x-100"
+          className="absolute inset-0 origin-left scale-x-0 bg-white/20 transition-transform duration-500 ease-out group-hover/sf:scale-x-100"
         />
       )}
     </a>
@@ -81,7 +88,7 @@ interface SlideFillButtonProps extends Omit<ComponentProps<"button">, "className
 
 export function SlideFillButton({
   children,
-  variant = "ember",
+  variant = "primary",
   size = "md",
   arrow = false,
   magnetic = true,
@@ -105,10 +112,10 @@ export function SlideFillButton({
           strokeWidth={2}
         />
       )}
-      {variant === "ember" && (
+      {variant === "primary" && (
         <span
           aria-hidden="true"
-          className="absolute inset-0 origin-left scale-x-0 bg-white/15 transition-transform duration-500 ease-out group-hover/sf:scale-x-100"
+          className="absolute inset-0 origin-left scale-x-0 bg-white/20 transition-transform duration-500 ease-out group-hover/sf:scale-x-100"
         />
       )}
     </button>

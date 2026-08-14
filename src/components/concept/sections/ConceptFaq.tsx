@@ -50,13 +50,17 @@ export function ConceptFaq() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="relative bg-plum py-20 sm:py-24 lg:py-28">
-      <div className="mx-auto max-w-[900px] px-5 sm:px-8 lg:px-10">
-        <p className="font-mono-meta text-lavender/70">FAQ</p>
-        <h2 className="mt-3 font-display text-[clamp(2rem,5vw,3.5rem)] leading-[0.98] tracking-[-0.02em] text-cream">
+    <section id="faq" className="relative overflow-hidden bg-foam py-20 sm:py-24 lg:py-28">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-[10%] top-[10%] h-[30rem] w-[30rem] rounded-full bg-rich/15 blur-[130px]"
+      />
+      <div className="relative mx-auto max-w-[900px] px-5 sm:px-8 lg:px-10">
+        <p className="font-mono-meta text-royal">FAQ</p>
+        <h2 className="mt-3 font-display text-[clamp(2rem,5vw,3.5rem)] leading-[0.98] tracking-[-0.02em] text-ink">
           Straight answers.
         </h2>
-        <p className="mt-4 max-w-xl text-[1.0625rem] leading-relaxed text-cream/55">
+        <p className="mt-4 max-w-xl text-[1.0625rem] leading-relaxed text-ink/60">
           No fine print games — just what you need before you book.
         </p>
 
@@ -66,7 +70,10 @@ export function ConceptFaq() {
             return (
               <div
                 key={faq.q}
-                className="border-b border-cream/10"
+                className={cn(
+                  "rounded-2xl px-5 transition-colors duration-300 sm:px-6",
+                  isOpen ? "glass" : "border border-transparent hover:bg-white/45"
+                )}
               >
                 <button
                   type="button"
@@ -74,13 +81,13 @@ export function ConceptFaq() {
                   className="flex w-full items-center justify-between gap-6 py-5 text-left"
                   aria-expanded={isOpen}
                 >
-                  <span className="text-[1.0625rem] font-medium tracking-tight text-cream sm:text-lg">
+                  <span className="text-[1.0625rem] font-medium tracking-tight text-ink sm:text-lg">
                     {faq.q}
                   </span>
                   <span
                     className={cn(
-                      "grid h-9 w-9 shrink-0 place-items-center rounded-full ring-1 ring-inset ring-cream/20 text-cream transition-transform duration-300",
-                      isOpen && "rotate-45 bg-ember text-plum ring-ember"
+                      "grid h-9 w-9 shrink-0 place-items-center rounded-full text-ink ring-1 ring-inset ring-ink/15 transition-transform duration-300",
+                      isOpen && "rotate-45 bg-royal text-white ring-royal"
                     )}
                   >
                     <Plus className="h-4 w-4" strokeWidth={2.25} />
@@ -93,7 +100,7 @@ export function ConceptFaq() {
                   )}
                 >
                   <div className="overflow-hidden">
-                    <p className="pb-5 pr-12 text-[0.9375rem] leading-relaxed text-cream/55">
+                    <p className="pb-5 pr-12 text-[0.9375rem] leading-relaxed text-ink/65">
                       {faq.a}
                     </p>
                   </div>

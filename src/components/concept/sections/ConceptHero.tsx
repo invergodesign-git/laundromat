@@ -1,44 +1,72 @@
 "use client";
 
-import { useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
+import { Sparkles, Truck, ShieldCheck } from "lucide-react";
 import { useGSAP } from "@gsap/react";
+import { Bubbles } from "@/components/concept/motion/Bubbles";
 import { SlideFill } from "@/components/concept/motion/SlideFill";
-import { EASE, gsap, prefersReducedMotion, SplitText } from "@/lib/gsap";
+import { DrawSVGPlugin, EASE, gsap, prefersReducedMotion, SplitText } from "@/lib/gsap";
+import { BUSINESS } from "@/lib/business";
 import { PRICING_CONFIG } from "@/lib/pricing";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
-const META = [
-  "Professional Wash & Fold",
-  "San Diego, CA",
-  `${formatCurrency(PRICING_CONFIG.washFoldRatePerLb)} / lb`,
-  "Verified Veteran Owned",
-];
+const TRUST = [
+  { icon: ShieldCheck, label: "Veteran owned" },
+  { icon: Truck, label: "We pick up & deliver" },
+  { icon: Sparkles, label: "Folded by hand" },
+] as const;
+
+/** Bubbles you can actually pop. Positioned along the bottom of the hero. */
+const POPPABLE = [
+  { left: 6, bottom: 14, size: 58 },
+  { left: 17, bottom: 4, size: 34 },
+  { left: 28, bottom: 20, size: 44 },
+  { left: 39, bottom: 6, size: 26 },
+  { left: 62, bottom: 18, size: 40 },
+  { left: 73, bottom: 5, size: 62 },
+  { left: 84, bottom: 22, size: 30 },
+  { left: 92, bottom: 8, size: 48 },
+] as const;
 
 /**
- * Section 01 — Cinematic asymmetric hero.
- * Photograph as off-centre vertical plate; headline crosses its edge.
+ * Hero — light, glassy and deliberately playful. The photograph sits in a
+ * tilted glass frame, soap bubbles rise past it, and the ones along the
+ * bottom pop when you touch them.
  */
 export function ConceptHero() {
   const root = useRef<HTMLElement>(null);
-  const plate = useRef<HTMLDivElement>(null);
+  const frame = useRef<HTMLDivElement>(null);
   const type = useRef<HTMLDivElement>(null);
+  const blobs = useRef<HTMLDivElement>(null);
+  const [popped, setPopped] = useState<number[]>([]);
+
+  const pop = useCallback((i: number) => {
+    setPopped((prev) => (prev.includes(i) ? prev : [...prev, i]));
+    window.setTimeout(() => {
+      setPopped((prev) => prev.filter((n) => n !== i));
+    }, 1400);
+  }, []);
 
   useGSAP(
     () => {
-      if (!root.current || !plate.current || !type.current) return;
+      if (!root.current || !frame.current || !type.current) return;
+
+      void DrawSVGPlugin;
+
+      const squiggle = root.current.querySelector(".hero-squiggle") as SVGPathElement | null;
 
       if (prefersReducedMotion()) {
-        gsap.set([plate.current, type.current, ".hero-meta", ".hero-cta"], {
-          autoAlpha: 1,
-          clearProps: "clipPath",
-        });
+        gsap.set([frame.current, ".hero-meta", ".hero-cta", ".hero-card"], { autoAlpha: 1 });
+        if (squiggle) gsap.set(squiggle, { drawSVG: "100%" });
         return;
       }
 
-      gsap.set(plate.current, { clipPath: "inset(100% 0% 0% 0%)" });
+      gsap.set(frame.current, { autoAlpha: 0, y: 48, rotate: 4, scale: 0.96 });
       gsap.set(".hero-meta", { autoAlpha: 0, y: 16 });
       gsap.set(".hero-cta", { autoAlpha: 0, y: 20 });
+      gsap.set(".hero-card", { autoAlpha: 0, y: 24, scale: 0.92 });
+      if (squiggle) gsap.set(squiggle, { drawSVG: "0%" });
 
       const headline = root.current.querySelector(".hero-headline");
       let split: ReturnType<typeof SplitText.create> | null = null;
@@ -52,30 +80,41 @@ export function ConceptHero() {
       }
 
       const tl = gsap.timeline({ delay: 0.15 });
-      tl.to(plate.current, {
-        clipPath: "inset(0% 0% 0% 0%)",
-        duration: 1.4,
+
+      tl.to(split?.lines ?? [], {
+        yPercent: 0,
+        duration: 1.05,
+        stagger: 0.09,
         ease: EASE.premium,
       })
         .to(
-          split?.lines ?? [],
-          { yPercent: 0, duration: 1.1, stagger: 0.1, ease: EASE.premium },
-          "-=0.9"
+          frame.current,
+          { autoAlpha: 1, y: 0, rotate: 2.2, scale: 1, duration: 1.3, ease: EASE.premium },
+          "-=0.85"
         )
         .to(
           ".hero-meta",
           { autoAlpha: 1, y: 0, duration: 0.7, stagger: 0.06, ease: EASE.soft },
-          "-=0.5"
+          "-=0.9"
         )
         .to(
           ".hero-cta",
           { autoAlpha: 1, y: 0, duration: 0.7, stagger: 0.08, ease: EASE.soft },
-          "-=0.4"
+          "-=0.5"
+        )
+        .to(
+          ".hero-card",
+          { autoAlpha: 1, y: 0, scale: 1, duration: 0.8, stagger: 0.12, ease: "back.out(1.6)" },
+          "-=0.45"
         );
 
-      // Scroll: plate scales, type rises faster.
-      gsap.to(plate.current, {
-        scale: 1.08,
+      if (squiggle) {
+        tl.to(squiggle, { drawSVG: "100%", duration: 0.7, ease: EASE.soft }, "-=0.6");
+      }
+
+      // Scroll: the frame drifts up faster than the type, opening depth.
+      gsap.to(frame.current, {
+        y: -70,
         ease: "none",
         scrollTrigger: {
           trigger: root.current,
@@ -84,8 +123,8 @@ export function ConceptHero() {
           scrub: true,
         },
       });
-      gsap.to(type.current, {
-        y: -80,
+      gsap.to(blobs.current, {
+        y: 90,
         ease: "none",
         scrollTrigger: {
           trigger: root.current,
@@ -95,22 +134,21 @@ export function ConceptHero() {
         },
       });
 
-      // Pointer parallax — subtle depth between plate and type.
+      // Pointer parallax — frame leans toward the cursor, colour field away.
       const onMove = (e: MouseEvent) => {
-        if (prefersReducedMotion()) return;
         const rect = root.current!.getBoundingClientRect();
         const nx = (e.clientX - rect.left) / rect.width - 0.5;
         const ny = (e.clientY - rect.top) / rect.height - 0.5;
-        gsap.to(plate.current, {
-          x: nx * -12,
-          y: ny * -8,
-          duration: 1.2,
+        gsap.to(frame.current, {
+          rotateY: nx * 7,
+          rotateX: ny * -5,
+          x: nx * 14,
+          duration: 1.1,
           ease: "power3.out",
         });
-        gsap.to(type.current, {
-          x: nx * 8,
-          y: ny * 6,
-          duration: 1.2,
+        gsap.to(blobs.current, {
+          x: nx * -34,
+          duration: 1.4,
           ease: "power3.out",
         });
       };
@@ -128,76 +166,168 @@ export function ConceptHero() {
     <section
       id="home"
       ref={root}
-      className="relative isolate flex min-h-[100svh] flex-col overflow-hidden bg-plum pt-[calc(2.25rem+4rem)] sm:pt-[calc(2.25rem+4.5rem)]"
+      className="relative isolate flex min-h-[100svh] flex-col overflow-hidden bg-foam pt-[calc(2.25rem+4.5rem)] sm:pt-[calc(2.25rem+5rem)]"
     >
-      {/* Off-centre vertical plate — muted on small screens so type stays primary */}
-      <div
-        ref={plate}
-        className="absolute inset-x-0 top-0 h-[42%] opacity-50 will-change-transform sm:opacity-100 sm:-right-[4%] sm:left-auto sm:top-[6%] sm:h-[78%] sm:w-[62%] sm:max-w-[780px] lg:right-[6%] lg:w-[48%]"
-      >
-        <div className="relative h-full w-full overflow-hidden">
-          <Image
-            src="/images/concept/c-hero.png"
-            alt="Freshly folded white towels and linens in deep plum light"
-            fill
-            priority
-            sizes="(min-width: 1024px) 46vw, 70vw"
-            className="object-cover object-center"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-r from-plum via-plum/20 to-transparent"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-t from-plum/80 via-transparent to-plum/10"
-          />
-        </div>
+      {/* Soft colour field — the only thing keeping a white page from going flat */}
+      <div ref={blobs} aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute -left-[12%] top-[-10%] h-[38rem] w-[38rem] rounded-full bg-aqua/25 blur-[130px]" />
+        <div className="absolute right-[-14%] top-[8%] h-[42rem] w-[42rem] rounded-full bg-rich/20 blur-[140px]" />
+        <div className="absolute bottom-[-18%] left-[28%] h-[32rem] w-[32rem] rounded-full bg-blush/20 blur-[120px]" />
       </div>
 
-      <div
-        ref={type}
-        className="relative z-10 mx-auto flex w-full max-w-[1440px] flex-1 flex-col justify-end px-5 pb-10 pt-28 sm:px-8 sm:pb-14 sm:pt-0 lg:px-10 lg:pb-16"
-      >
-        <div className="max-w-3xl">
-          <p className="hero-meta mb-6 font-mono-meta text-lavender/80">
-            Veteran owned · San Diego
+      {/* Ambient rise — behind everything, never interactive */}
+      <Bubbles count={11} rise="-105vh" speed={1.25} className="-z-10 opacity-70" />
+
+      <div className="relative mx-auto grid w-full max-w-[1440px] flex-1 grid-cols-1 items-center gap-12 px-5 pb-28 pt-10 sm:px-8 lg:grid-cols-12 lg:gap-8 lg:px-10 lg:pb-32">
+        {/* ---- Type column ---- */}
+        <div ref={type} className="relative z-10 lg:col-span-6">
+          <p className="hero-meta glass inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 font-mono-meta text-ink/65">
+            <span className="h-1.5 w-1.5 rounded-full bg-ember" />
+            Veteran owned · {BUSINESS.city}
           </p>
 
-          <h1 className="hero-headline font-display text-[3.75rem] font-normal leading-[0.94] tracking-[-0.02em] text-cream sm:text-[clamp(3.5rem,8.5vw,6.75rem)]">
-            Laundry,
+          <h1 className="hero-headline mt-6 font-display text-[clamp(3rem,9vw,5.75rem)] leading-[0.95] tracking-[-0.025em] text-ink">
+            Skip laundry day.
             <br />
-            handled right.
+            Keep the clean part.
           </h1>
 
-          <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 sm:mt-10 sm:gap-x-8">
-            {META.map((item) => (
-              <li key={item} className="hero-meta font-mono-meta text-cream/55">
-                {item}
-              </li>
-            ))}
-          </ul>
+          {/* Hand-drawn strike under the promise — draws itself in */}
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 320 22"
+            fill="none"
+            className="hero-meta mt-1 h-4 w-[min(320px,62%)] text-ember"
+          >
+            <path
+              className="hero-squiggle"
+              d="M4 13C46 5 92 17 134 10C176 3 218 15 260 9C284 6 302 11 316 7"
+              stroke="currentColor"
+              strokeWidth="4"
+              strokeLinecap="round"
+            />
+          </svg>
 
-          <div className="mt-10 flex flex-col gap-3 sm:mt-12 sm:flex-row sm:items-center">
+          <p className="hero-meta mt-6 max-w-md text-[1.0625rem] leading-relaxed text-ink/65 sm:text-[1.125rem]">
+            Leave the bag at your door. It comes back washed, dried and folded
+            by hand — at {formatCurrency(PRICING_CONFIG.washFoldRatePerLb)} a pound,
+            with pickup priced honestly by distance.
+          </p>
+
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="hero-cta">
-              <SlideFill href="#pricing" variant="ember" size="lg" arrow>
+              <SlideFill href="#pricing" variant="primary" size="lg" arrow>
                 Book now
               </SlideFill>
             </div>
             <div className="hero-cta">
-              <SlideFill href="#journey" variant="ghost" size="lg" arrow magnetic={false}>
-                Discover more
+              <SlideFill href="#journey" variant="glass" size="lg" arrow magnetic={false}>
+                See how it works
               </SlideFill>
+            </div>
+          </div>
+
+          <ul className="mt-10 flex flex-wrap gap-x-6 gap-y-3">
+            {TRUST.map(({ icon: Icon, label }) => (
+              <li
+                key={label}
+                className="hero-meta flex items-center gap-2 text-[0.8125rem] font-medium text-ink/55"
+              >
+                <Icon className="h-4 w-4 text-royal" strokeWidth={2} />
+                {label}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* ---- Photograph column ---- */}
+        <div className="relative lg:col-span-6 lg:pl-6">
+          <div
+            ref={frame}
+            className="relative mx-auto aspect-[4/5] w-full max-w-[520px] will-change-transform [transform-style:preserve-3d]"
+          >
+            <div className="glass absolute inset-0 rounded-[32px] p-2.5 sm:p-3">
+              <div className="relative h-full w-full overflow-hidden rounded-[24px]">
+                <Image
+                  src="/images/real/hero-stack.jpg"
+                  alt="A tall stack of freshly folded, brightly coloured laundry carried in both arms"
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 44vw, 90vw"
+                  className="object-cover object-center"
+                />
+              </div>
+            </div>
+
+            {/* Price chip — the number people came for */}
+            <div className="hero-card glass absolute -left-3 bottom-8 rounded-2xl px-5 py-4 sm:-left-8">
+              <p className="font-mono-meta text-ink/45">Wash &amp; fold</p>
+              <p className="mt-1 font-display text-[2rem] leading-none tracking-tight text-ember tabular">
+                {formatCurrency(PRICING_CONFIG.washFoldRatePerLb)}
+                <span className="ml-1 font-mono text-sm tracking-wide text-ink/45">/ lb</span>
+              </p>
+            </div>
+
+            {/* Turnaround chip */}
+            <div className="hero-card glass absolute -right-2 top-10 flex items-center gap-2.5 rounded-2xl px-4 py-3 sm:-right-6">
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-royal/10 text-royal">
+                <Truck className="h-4 w-4" strokeWidth={2} />
+              </span>
+              <span className="text-[0.8125rem] font-medium leading-tight text-ink/70">
+                Door to door
+                <br />
+                <span className="text-ink/45">in {BUSINESS.servingArea.split(",")[0]}</span>
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Baseline rule */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-x-0 bottom-0 h-px bg-cream/10"
-      />
+      {/* ---- Foam line: poppable bubbles sitting on a soft wave ---- */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-40">
+        <svg
+          viewBox="0 0 1440 160"
+          preserveAspectRatio="none"
+          className="absolute inset-x-0 bottom-0 h-full w-full"
+        >
+          <path
+            d="M0,96 C180,52 340,132 540,104 C740,76 860,20 1060,52 C1220,78 1340,60 1440,36 L1440,160 L0,160 Z"
+            fill="white"
+            fillOpacity="0.55"
+          />
+          <path
+            d="M0,124 C200,88 380,150 600,128 C820,106 960,64 1180,92 C1300,108 1380,100 1440,88 L1440,160 L0,160 Z"
+            fill="white"
+            fillOpacity="0.8"
+          />
+        </svg>
+
+        <div className="pointer-events-auto absolute inset-0">
+          {POPPABLE.map((b, i) => {
+            const isPopped = popped.includes(i);
+            return (
+              <button
+                key={i}
+                type="button"
+                tabIndex={-1}
+                aria-hidden="true"
+                onPointerEnter={() => pop(i)}
+                onClick={() => pop(i)}
+                className={cn(
+                  "bubble absolute cursor-pointer transition-all duration-300 ease-out",
+                  isPopped ? "scale-150 opacity-0" : "scale-100 opacity-100"
+                )}
+                style={{
+                  left: `${b.left}%`,
+                  bottom: `${b.bottom}px`,
+                  width: b.size,
+                  height: b.size,
+                }}
+              />
+            );
+          })}
+        </div>
+      </div>
     </section>
   );
 }

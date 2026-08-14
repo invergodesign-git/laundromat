@@ -72,34 +72,34 @@ export function ConceptNav() {
   return (
     <>
       {/* Utility strip — Call · Hours · Directions · Book */}
-      <div className="fixed inset-x-0 top-0 z-[51] border-b border-cream/10 bg-plum-deep">
+      <div className="fixed inset-x-0 top-0 z-[51] bg-royal text-white">
         <div className="mx-auto flex h-9 max-w-[1440px] items-center justify-between gap-3 px-5 text-[0.6875rem] sm:px-8 lg:px-10">
           <div className="flex min-w-0 items-center gap-3 sm:gap-5">
             <a
               href={BUSINESS.phoneHref}
-              className="flex shrink-0 items-center gap-2 font-mono font-medium tracking-wide text-cream/70 transition-colors hover:text-cream"
+              className="flex shrink-0 items-center gap-2 font-mono font-medium tracking-wide text-white/90 transition-colors hover:text-white"
             >
-              <Phone className="h-3 w-3 text-ember" />
+              <Phone className="h-3 w-3" />
               <span className="hidden sm:inline">Call Us:</span>
               {BUSINESS.phoneDisplay}
             </a>
-            <span className="hidden items-center gap-1.5 font-mono tracking-wide text-cream/45 md:inline-flex">
-              <Clock className="h-3 w-3 text-cream/30" />
+            <span className="hidden items-center gap-1.5 font-mono tracking-wide text-white/65 md:inline-flex">
+              <Clock className="h-3 w-3" />
               {BUSINESS.hoursLabel}
             </span>
             <a
               href={BUSINESS.mapsHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden items-center gap-1.5 font-mono tracking-wide text-cream/45 transition-colors hover:text-cream lg:inline-flex"
+              className="hidden items-center gap-1.5 font-mono tracking-wide text-white/65 transition-colors hover:text-white lg:inline-flex"
             >
-              <MapPin className="h-3 w-3 text-cream/30" />
+              <MapPin className="h-3 w-3" />
               Directions
             </a>
           </div>
           <a
             href="#pricing"
-            className="shrink-0 font-mono font-medium tracking-[0.12em] text-ember uppercase transition-colors hover:text-cream"
+            className="shrink-0 font-mono font-medium tracking-[0.12em] uppercase text-white/90 transition-colors hover:text-white"
           >
             Book now
           </a>
@@ -110,11 +110,11 @@ export function ConceptNav() {
         className={cn(
           "fixed inset-x-0 top-9 z-50 transition-all duration-500",
           leftHero
-            ? "border-b border-cream/10 bg-plum/90 backdrop-blur-md"
-            : "border-b border-cream/10 bg-transparent"
+            ? "border-b border-white/60 bg-white/75 backdrop-blur-xl backdrop-saturate-150 shadow-[0_10px_30px_-24px_rgba(20,18,41,0.5)]"
+            : "border-b border-transparent bg-transparent"
         )}
       >
-        <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-6 px-5 sm:h-[72px] sm:px-8 lg:px-10">
+        <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-6 px-5 sm:h-[76px] sm:px-8 lg:px-10">
           <a href="#home" className="shrink-0" aria-label={BUSINESS.name}>
             <Image
               id="nav-logo"
@@ -124,7 +124,7 @@ export function ConceptNav() {
               height={326}
               priority
               className={cn(
-                "h-8 w-auto transition-opacity duration-300 sm:h-9",
+                "h-9 w-auto transition-opacity duration-300 sm:h-11",
                 ready ? "opacity-100" : "opacity-0"
               )}
             />
@@ -137,23 +137,21 @@ export function ConceptNav() {
                 href={`#${link.id}`}
                 className={cn(
                   "relative px-4 py-2 text-[0.8125rem] font-semibold tracking-wide transition-colors duration-300",
-                  active === link.id
-                    ? "text-cream"
-                    : "text-cream/50 hover:text-cream/85"
+                  active === link.id ? "text-royal" : "text-ink/55 hover:text-ink"
                 )}
               >
                 {link.label}
                 {active === link.id && (
                   <span
                     aria-hidden="true"
-                    className="absolute inset-x-4 -bottom-px h-px bg-ember"
+                    className="absolute inset-x-4 -bottom-0.5 h-0.5 rounded-full bg-ember"
                   />
                 )}
               </a>
             ))}
             <a
               href={BUSINESS.phoneHref}
-              className="relative px-4 py-2 text-[0.8125rem] font-semibold tracking-wide text-cream/50 transition-colors hover:text-cream/85"
+              className="relative px-4 py-2 text-[0.8125rem] font-semibold tracking-wide text-ink/55 transition-colors hover:text-ink"
             >
               Contact Us
             </a>
@@ -163,13 +161,13 @@ export function ConceptNav() {
             <a
               href={BUSINESS.phoneHref}
               aria-label={`Call ${BUSINESS.ownerFirstName}`}
-              className="grid h-10 w-10 place-items-center rounded-full bg-ember text-plum sm:hidden"
+              className="grid h-10 w-10 place-items-center rounded-full bg-royal text-white sm:hidden"
             >
               <Phone className="h-[16px] w-[16px]" />
             </a>
             <SlideFill
               href="#pricing"
-              variant="ember"
+              variant="primary"
               size="md"
               arrow
               className="!hidden !h-10 !px-4 !text-[0.6875rem] sm:!inline-flex"
@@ -180,7 +178,7 @@ export function ConceptNav() {
               type="button"
               onClick={() => setOpen(true)}
               aria-label="Open menu"
-              className="grid h-10 w-10 place-items-center rounded-full text-cream ring-1 ring-inset ring-cream/20 lg:hidden"
+              className="grid h-10 w-10 place-items-center rounded-full bg-white/70 text-ink ring-1 ring-inset ring-ink/10 backdrop-blur lg:hidden"
             >
               <Menu className="h-[18px] w-[18px]" />
             </button>
@@ -189,20 +187,20 @@ export function ConceptNav() {
       </header>
 
       {open && (
-        <div className="fixed inset-0 z-[60] bg-plum lg:hidden">
+        <div className="fixed inset-0 z-[60] bg-foam lg:hidden">
           <div className="flex h-[calc(2.25rem+4rem)] items-end justify-between px-5 pb-3 sm:px-8">
             <Image
               src="/images/logo-knockout.png"
               alt={BUSINESS.name}
               width={958}
               height={326}
-              className="h-8 w-auto"
+              className="h-9 w-auto"
             />
             <button
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Close menu"
-              className="grid h-11 w-11 place-items-center rounded-full text-cream ring-1 ring-inset ring-cream/20"
+              className="grid h-11 w-11 place-items-center rounded-full bg-white text-ink ring-1 ring-inset ring-ink/10"
             >
               <X className="h-[18px] w-[18px]" />
             </button>
@@ -213,14 +211,14 @@ export function ConceptNav() {
                 key={link.id}
                 href={`#${link.id}`}
                 onClick={() => setOpen(false)}
-                className="border-b border-cream/10 py-5 text-2xl font-display tracking-tight text-cream"
+                className="border-b border-ink/10 py-5 font-display text-2xl tracking-tight text-ink"
               >
                 {link.label}
               </a>
             ))}
             <a
               href={BUSINESS.phoneHref}
-              className="border-b border-cream/10 py-5 text-2xl font-display tracking-tight text-cream"
+              className="border-b border-ink/10 py-5 font-display text-2xl tracking-tight text-ink"
             >
               Contact Us
             </a>
@@ -228,7 +226,7 @@ export function ConceptNav() {
           <div className="mt-8 px-5 sm:px-8">
             <SlideFill
               href="#pricing"
-              variant="ember"
+              variant="primary"
               size="lg"
               arrow
               onClick={() => setOpen(false)}

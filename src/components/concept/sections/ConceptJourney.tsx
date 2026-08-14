@@ -4,33 +4,34 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { useGSAP } from "@gsap/react";
 import { useIntro } from "@/components/concept/IntroContext";
+import { Bubbles } from "@/components/concept/motion/Bubbles";
 import { DrawSVGPlugin, gsap, MotionPathPlugin, prefersReducedMotion } from "@/lib/gsap";
 
 const STAGES = [
   {
     status: "PICKUP",
-    src: "/images/concept/c-journey-01.png",
-    alt: "A tote of folded linens waiting on a San Diego doorstep for pickup",
+    src: "/images/real/basket.jpg",
+    alt: "A full laundry basket waiting to be collected",
   },
   {
     status: "IN TRANSIT",
-    src: "/images/concept/c-journey-02.png",
-    alt: "A laundry delivery van on a San Diego street at golden hour",
+    src: "/images/real/van.jpg",
+    alt: "A white delivery van on the road under open sky",
   },
   {
     status: "WASH",
-    src: "/images/concept/c-journey-03.png",
-    alt: "Washing machines in soft motion inside the laundromat",
+    src: "/images/real/shop.jpg",
+    alt: "Commercial washing machines running inside the laundromat",
   },
   {
     status: "FOLD",
-    src: "/images/concept/c-journey-04.png",
-    alt: "Hands carefully folding a crisp white shirt",
+    src: "/images/real/fold.jpg",
+    alt: "Clothes being folded by hand into neat stacks",
   },
   {
     status: "READY",
-    src: "/images/concept/c-journey-05.png",
-    alt: "Freshly folded linens in a tote, ready to return to the door",
+    src: "/images/real/handoff.jpg",
+    alt: "A warm stack of clean folded knitwear carried back to the door",
   },
 ] as const;
 
@@ -40,12 +41,13 @@ const N = STAGES.length;
 function VanMark() {
   return (
     <g transform="translate(-18, -10)">
-      <rect x="0" y="4" width="36" height="14" rx="2" fill="#FF8A3D" />
-      <rect x="22" y="0" width="12" height="8" rx="1.5" fill="#FF8A3D" />
-      <circle cx="8" cy="18" r="3.5" fill="#FAF7F2" />
-      <circle cx="28" cy="18" r="3.5" fill="#FAF7F2" />
-      <circle cx="8" cy="18" r="1.5" fill="#17131D" />
-      <circle cx="28" cy="18" r="1.5" fill="#17131D" />
+      <rect x="0" y="4" width="36" height="14" rx="3" fill="#FF6A2B" />
+      <rect x="22" y="0" width="12" height="8" rx="2" fill="#FF6A2B" />
+      <rect x="24" y="2" width="8" height="5" rx="1" fill="#FFFFFF" fillOpacity="0.75" />
+      <circle cx="8" cy="18" r="3.6" fill="#141229" />
+      <circle cx="28" cy="18" r="3.6" fill="#141229" />
+      <circle cx="8" cy="18" r="1.4" fill="#FFFFFF" />
+      <circle cx="28" cy="18" r="1.4" fill="#FFFFFF" />
     </g>
   );
 }
@@ -169,95 +171,106 @@ export function ConceptJourney() {
   );
 
   return (
-    <section id="journey" ref={root} className="relative z-0 bg-plum">
-      <div ref={pin} className="relative h-[100dvh] w-full overflow-hidden bg-plum">
-        {STAGES.map((stage, i) => (
-          <div
-            key={stage.status}
-            className="journey-plate absolute inset-0"
-            style={{ zIndex: i === 0 ? 5 : 1, opacity: i === 0 ? 1 : 0 }}
-          >
-            <Image
-              src={stage.src}
-              alt={stage.alt}
-              fill
-              sizes="100vw"
-              className="object-cover object-center"
-              priority={i <= 1}
-            />
-            <div aria-hidden="true" className="absolute inset-0 bg-plum/45" />
+    <section id="journey" ref={root} className="relative z-0 bg-foam">
+      <div ref={pin} className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-foam">
+        {/* Colour field + drifting foam, kept well behind the photograph */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div className="absolute -left-[10%] top-[10%] h-[32rem] w-[32rem] rounded-full bg-aqua/20 blur-[130px]" />
+          <div className="absolute -right-[8%] bottom-[6%] h-[34rem] w-[34rem] rounded-full bg-rich/18 blur-[130px]" />
+        </div>
+        <Bubbles count={7} rise="-100vh" speed={1.6} className="opacity-45" />
+
+        <div className="relative z-30 mx-auto w-full max-w-[1440px] shrink-0 px-5 pt-16 sm:px-8 sm:pt-20 lg:px-10">
+          <p className="font-mono-meta text-royal">How it works</p>
+          <div className="relative mt-3 min-h-[clamp(2.75rem,7vw,5rem)]">
+            <h2 className="journey-open font-display text-[clamp(2.25rem,6vw,4.5rem)] leading-[0.95] tracking-[-0.02em] text-ink">
+              We come to you.
+            </h2>
+            <h2 className="journey-close absolute inset-x-0 top-0 font-display text-[clamp(2.25rem,6vw,4.5rem)] leading-[0.95] tracking-[-0.02em] text-ink">
+              Back to you.
+            </h2>
           </div>
-        ))}
+        </div>
 
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(23,19,29,0.7)_100%)]"
-        />
+        {/* Stage plate — a framed photograph, not a full-bleed wash */}
+        <div className="relative z-10 mx-auto flex w-full max-w-[1100px] min-h-0 flex-1 items-center px-5 py-6 sm:px-8 lg:px-10">
+          <div className="glass relative h-full max-h-[46vh] w-full rounded-[28px] p-2.5 sm:max-h-none sm:p-3">
+            <div className="relative h-full w-full overflow-hidden rounded-[20px] bg-foam-deep">
+              {STAGES.map((stage, i) => (
+                <div
+                  key={stage.status}
+                  className="journey-plate absolute inset-0"
+                  style={{ zIndex: i === 0 ? 5 : 1, opacity: i === 0 ? 1 : 0 }}
+                >
+                  <Image
+                    src={stage.src}
+                    alt={stage.alt}
+                    fill
+                    sizes="(min-width: 1100px) 1100px, 100vw"
+                    className="object-cover object-center"
+                    priority={i <= 1}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
+        {/* Route — drawn over the whole frame so the van really travels */}
         <svg
-          className="absolute inset-0 z-20 hidden h-full w-full sm:block"
+          className="pointer-events-none absolute inset-0 z-20 hidden h-full w-full sm:block"
           viewBox="0 0 1440 900"
           preserveAspectRatio="xMidYMid slice"
           fill="none"
           aria-hidden="true"
         >
           <path
-            d="M 120 720 C 320 620, 420 480, 560 420 C 720 350, 820 300, 980 280 C 1120 265, 1240 220, 1320 160"
-            stroke="#FF8A3D"
+            d="M 90 780 C 300 700, 380 520, 560 440 C 740 360, 860 320, 1010 300 C 1160 280, 1280 210, 1360 130"
+            stroke="#4536D6"
             strokeWidth="2"
-            strokeOpacity="0.15"
+            strokeOpacity="0.16"
             strokeDasharray="6 10"
           />
           <path
             id="journey-route"
-            d="M 120 720 C 320 620, 420 480, 560 420 C 720 350, 820 300, 980 280 C 1120 265, 1240 220, 1320 160"
-            stroke="#FF8A3D"
+            d="M 90 780 C 300 700, 380 520, 560 440 C 740 360, 860 320, 1010 300 C 1160 280, 1280 210, 1360 130"
+            stroke="#4536D6"
             strokeWidth="2.5"
+            strokeOpacity="0.7"
             strokeLinecap="round"
           />
-          <circle cx="120" cy="720" r="5" fill="#FF8A3D" />
-          <circle cx="1320" cy="160" r="5" fill="#FF8A3D" />
+          <circle cx="90" cy="780" r="6" fill="#4536D6" />
+          <circle cx="1360" cy="130" r="6" fill="#4536D6" />
           <g id="journey-van">
             <VanMark />
           </g>
         </svg>
 
+        {/* Mobile: a simple vertical tracker instead of the driving route */}
         <svg
-          className="absolute inset-y-0 right-6 z-20 w-8 sm:hidden"
+          className="pointer-events-none absolute inset-y-0 right-4 z-20 w-8 sm:hidden"
           viewBox="0 0 32 900"
           preserveAspectRatio="none"
           fill="none"
           aria-hidden="true"
         >
-          <path d="M 16 80 L 16 820" stroke="#FF8A3D" strokeWidth="2" strokeOpacity="0.35" />
+          <path d="M 16 80 L 16 820" stroke="#4536D6" strokeWidth="2" strokeOpacity="0.25" />
           {STAGES.map((_, i) => (
             <circle
               key={i}
               cx="16"
               cy={80 + i * (740 / (N - 1))}
-              r={i === status ? 5 : 3}
-              fill={i <= status ? "#FF8A3D" : "#FAF7F2"}
-              fillOpacity={i <= status ? 1 : 0.25}
+              r={i === status ? 6 : 4}
+              fill={i <= status ? "#FF6A2B" : "#4536D6"}
+              fillOpacity={i <= status ? 1 : 0.2}
             />
           ))}
         </svg>
 
-        <div className="absolute inset-0 z-30 flex flex-col justify-between px-5 pb-8 pt-10 sm:px-8 sm:pb-10 sm:pt-14 lg:px-10">
-          <div className="pt-2">
-            <p className="font-mono-meta text-lavender/70">How it works</p>
-            <div className="relative mt-4 min-h-[clamp(3rem,8vw,6.5rem)]">
-              <h2 className="journey-open font-display text-[clamp(2.5rem,7vw,5.5rem)] leading-[0.95] tracking-[-0.02em] text-cream">
-                We come to you.
-              </h2>
-              <h2 className="journey-close absolute inset-x-0 top-0 font-display text-[clamp(2.5rem,7vw,5.5rem)] leading-[0.95] tracking-[-0.02em] text-cream">
-                Back to you.
-              </h2>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 items-end gap-5 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-6">
+        <div className="relative z-30 mx-auto w-full max-w-[1440px] shrink-0 px-5 pb-8 sm:px-8 sm:pb-10 lg:px-10">
+          <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-6">
             <div className="min-w-0">
-              <p className="font-mono-meta text-cream/40">Status</p>
+              <p className="font-mono-meta text-ink/40">Status</p>
               <p className="mt-1 truncate font-mono text-lg font-medium tracking-[0.12em] text-ember tabular sm:text-xl">
                 {STAGES[status].status}
               </p>
@@ -267,18 +280,18 @@ export function ConceptJourney() {
               {STAGES.map((s, i) => (
                 <span
                   key={s.status}
-                  className={`h-0.5 w-8 transition-colors duration-150 sm:w-10 ${
-                    i <= status ? "bg-ember" : "bg-cream/20"
+                  className={`h-1 w-8 rounded-full transition-colors duration-150 sm:w-10 ${
+                    i <= status ? "bg-ember" : "bg-ink/15"
                   }`}
                 />
               ))}
             </div>
 
-            <ol className="flex flex-nowrap items-center justify-start gap-x-1.5 overflow-x-auto font-mono-meta whitespace-nowrap text-cream/45 sm:justify-end">
+            <ol className="flex flex-nowrap items-center justify-start gap-x-1.5 overflow-x-auto font-mono-meta whitespace-nowrap text-ink/45 sm:justify-end">
               {STEPS.map((step, i) => (
                 <li key={step} className="inline-flex shrink-0 items-center gap-1.5">
                   {i > 0 && <span aria-hidden="true">→</span>}
-                  <span>{step}</span>
+                  <span className={i === status ? "text-royal" : undefined}>{step}</span>
                 </li>
               ))}
             </ol>

@@ -1,41 +1,44 @@
 @import "tailwindcss";
 
 @theme {
-  /* ---- Neutrals carry the page. Laundry sells clean, so the base is light. ---- */
-  --color-canvas: #ffffff;
-  --color-mist: #f6f5fb;
-  --color-line: #e8e5f2;
+  /* ---------------------------------------------------------------
+     Laundry day palette. The page is light because clean reads light:
+     soap-blue paper, deep ink type, violet brand, citrus for price.
+     --------------------------------------------------------------- */
+  --color-foam: #f2f6ff;
+  --color-foam-deep: #e2eafb;
+  --color-foam-warm: #fdfbff;
 
-  --color-ink: #171325;
-  --color-ink-soft: #5a5470;
+  --color-ink: #141229;
+  --color-ink-soft: #56527a;
 
-  /* ---- Brand violet: used as large calm surfaces, not as a dark environment ---- */
-  --color-brand: #6d3bea;
-  --color-brand-dark: #5227c4;
-  --color-brand-deep: #2a1266;
-  --color-brand-soft: #f1ebff;
-  --color-brand-line: #ded2fc;
+  --color-royal: #4536d6;
+  --color-rich: #6c5cff;
+  --color-lavender: #6a57de;
 
-  /* ---- Reserved for price and for booking. Nothing else. ---- */
-  --color-sun: #f4701f;
-  --color-sun-soft: #fff2e8;
+  /* Price + booking only. */
+  --color-ember: #ff6a2b;
+  --color-ember-soft: #fff0e8;
 
-  /* ---- Concept campaign palette (/concept only). Distinct names so / stays untouched. ---- */
-  --color-plum: #17131d;
-  --color-plum-deep: #24163a;
-  --color-royal: #5f35c9;
-  --color-rich: #7547e8;
-  --color-lavender: #b79aff;
-  --color-ember: #ff8a3d;
-  --color-cream: #faf7f2;
+  /* Playful bubble accents. */
+  --color-aqua: #5cc6f5;
+  --color-mint: #35d3bd;
+  --color-blush: #ff8fb8;
+
+  /* Legacy concept aliases — kept so nothing renders unstyled while the
+     light cutover settles. plum = paper, cream = ink. */
+  --color-plum: #f2f6ff;
+  --color-plum-deep: #e2eafb;
+  --color-cream: #141229;
 
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-instrument, ui-serif), Georgia, "Times New Roman", serif;
   --font-geist: var(--font-geist-sans, ui-sans-serif), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono, ui-monospace), monospace;
 
-  --shadow-card: 0 1px 2px rgba(23, 19, 37, 0.04), 0 10px 30px -12px rgba(23, 19, 37, 0.13);
-  --shadow-lift: 0 2px 6px rgba(23, 19, 37, 0.06), 0 28px 56px -20px rgba(23, 19, 37, 0.24);
+  --shadow-card: 0 1px 2px rgba(20, 18, 41, 0.04), 0 12px 32px -14px rgba(20, 18, 41, 0.16);
+  --shadow-lift: 0 2px 6px rgba(20, 18, 41, 0.05), 0 30px 60px -24px rgba(20, 18, 41, 0.28);
+  --shadow-glass: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 20px 50px -24px rgba(69, 54, 214, 0.35);
 }
 
 @layer base {
@@ -45,7 +48,7 @@
   }
 
   body {
-    background-color: var(--color-canvas);
+    background-color: var(--color-foam);
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -53,7 +56,7 @@
   }
 
   ::selection {
-    background-color: var(--color-brand);
+    background-color: var(--color-royal);
     color: #fff;
   }
 
@@ -67,7 +70,7 @@
 
   /* Focus is visible everywhere; this is a booking site before it is a design piece. */
   :focus-visible {
-    outline: 2px solid var(--color-brand);
+    outline: 2px solid var(--color-royal);
     outline-offset: 3px;
     border-radius: 4px;
   }
@@ -93,6 +96,88 @@
 
   .no-scrollbar {
     scrollbar-width: none;
+  }
+
+  /* ---- Glass surfaces ------------------------------------------------
+     Frosted white over the soap-blue page. Used for cards, the nav, and
+     the pricing instrument. Two weights so panels can stack. */
+  .glass {
+    background-color: rgba(255, 255, 255, 0.62);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.9) inset,
+      0 22px 55px -28px rgba(69, 54, 214, 0.38);
+  }
+
+  .glass-quiet {
+    background-color: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+  }
+
+  /* ---- Soap bubble ---------------------------------------------------
+     One element, no images: iridescent rim + two speculars. Size is
+     driven by width/height on the element itself. */
+  .bubble {
+    border-radius: 9999px;
+    background:
+      radial-gradient(
+        circle at 30% 26%,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(255, 255, 255, 0.35) 14%,
+        rgba(92, 198, 245, 0.14) 38%,
+        rgba(255, 143, 184, 0.12) 56%,
+        rgba(53, 211, 189, 0.16) 72%,
+        rgba(255, 255, 255, 0.5) 90%,
+        rgba(255, 255, 255, 0.18) 100%
+      );
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow:
+      inset 0 0 18px rgba(255, 255, 255, 0.75),
+      inset -6px -8px 22px rgba(92, 198, 245, 0.32),
+      0 10px 26px -12px rgba(69, 54, 214, 0.35);
+  }
+
+  .bubble::after {
+    content: "";
+    position: absolute;
+    top: 16%;
+    left: 20%;
+    width: 22%;
+    height: 14%;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.95);
+    filter: blur(0.5px);
+  }
+
+  @keyframes bubble-rise {
+    0% {
+      transform: translate3d(0, 0, 0) scale(0.9);
+      opacity: 0;
+    }
+    8% {
+      opacity: 1;
+    }
+    86% {
+      opacity: 1;
+    }
+    100% {
+      transform: translate3d(var(--drift, 0px), var(--rise, -110vh), 0) scale(1);
+      opacity: 0;
+    }
+  }
+
+  @keyframes bubble-bob {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+    50% {
+      transform: translate3d(var(--bob-x, 6px), var(--bob-y, -14px), 0);
+    }
   }
 
   /* Concept page type roles — scoped so they resolve font CSS variables
