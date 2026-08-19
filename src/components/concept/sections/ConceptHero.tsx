@@ -135,14 +135,15 @@ export function ConceptHero() {
       });
 
       // Pointer parallax — frame leans toward the cursor, colour field away.
+      // Deliberately 2D: a preserve-3d frame gets its own composited layer and
+      // Chrome then paints it over the backdrop-filtered nav.
       const onMove = (e: MouseEvent) => {
         const rect = root.current!.getBoundingClientRect();
         const nx = (e.clientX - rect.left) / rect.width - 0.5;
-        const ny = (e.clientY - rect.top) / rect.height - 0.5;
+        // `y` belongs to the scroll parallax above — only x/rotate here.
         gsap.to(frame.current, {
-          rotateY: nx * 7,
-          rotateX: ny * -5,
-          x: nx * 14,
+          rotate: 2.2 + nx * 1.8,
+          x: nx * 16,
           duration: 1.1,
           ease: "power3.out",
         });
@@ -166,7 +167,7 @@ export function ConceptHero() {
     <section
       id="home"
       ref={root}
-      className="relative isolate flex min-h-[100svh] flex-col overflow-hidden bg-foam pt-[calc(2.25rem+4.5rem)] sm:pt-[calc(2.25rem+5rem)]"
+      className="relative isolate flex min-h-[100svh] flex-col overflow-hidden bg-foam pt-[calc(2.25rem+5rem)] sm:pt-[calc(2.25rem+6rem)]"
     >
       {/* Soft colour field — the only thing keeping a white page from going flat */}
       <div ref={blobs} aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
@@ -244,7 +245,7 @@ export function ConceptHero() {
         <div className="relative lg:col-span-6 lg:pl-6">
           <div
             ref={frame}
-            className="relative mx-auto aspect-[4/5] w-full max-w-[520px] will-change-transform [transform-style:preserve-3d]"
+            className="relative mx-auto aspect-[4/5] w-full max-w-[520px] will-change-transform"
           >
             <div className="glass absolute inset-0 rounded-[32px] p-2.5 sm:p-3">
               <div className="relative h-full w-full overflow-hidden rounded-[24px]">
@@ -260,7 +261,7 @@ export function ConceptHero() {
             </div>
 
             {/* Price chip — the number people came for */}
-            <div className="hero-card glass absolute -left-3 bottom-8 rounded-2xl px-5 py-4 sm:-left-8">
+            <div className="hero-card glass absolute bottom-10 left-2 rounded-2xl px-5 py-4 sm:-left-12">
               <p className="font-mono-meta text-ink/45">Wash &amp; fold</p>
               <p className="mt-1 font-display text-[2rem] leading-none tracking-tight text-ember tabular">
                 {formatCurrency(PRICING_CONFIG.washFoldRatePerLb)}
@@ -293,12 +294,13 @@ export function ConceptHero() {
           <path
             d="M0,96 C180,52 340,132 540,104 C740,76 860,20 1060,52 C1220,78 1340,60 1440,36 L1440,160 L0,160 Z"
             fill="white"
-            fillOpacity="0.55"
+            fillOpacity="0.5"
           />
+          {/* Solid foam — same value as the section that follows, so the two
+              never show a seam where they meet. */}
           <path
             d="M0,124 C200,88 380,150 600,128 C820,106 960,64 1180,92 C1300,108 1380,100 1440,88 L1440,160 L0,160 Z"
-            fill="white"
-            fillOpacity="0.8"
+            fill="var(--color-foam)"
           />
         </svg>
 

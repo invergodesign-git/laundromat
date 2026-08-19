@@ -13,7 +13,7 @@ export function ConceptCloseCta() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_0%,rgba(108,92,255,0.65),transparent_60%)]"
       />
-      <Bubbles count={9} rise="-70vh" speed={1.4} className="opacity-30" />
+      <Bubbles count={7} rise="-70vh" speed={1.6} className="opacity-[0.16]" />
 
       <div className="relative mx-auto flex max-w-[1440px] flex-col items-start gap-8 px-5 py-16 sm:px-8 sm:py-20 lg:flex-row lg:items-end lg:justify-between lg:px-10 lg:py-24">
         <div className="max-w-2xl">

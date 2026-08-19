@@ -68,15 +68,10 @@ export function ConceptFooter() {
         <div className="lg:col-span-3">
           <h3 className="font-mono-meta text-ink/40">Contact Us</h3>
           <address className="mt-4 flex flex-col gap-3 not-italic text-[0.9375rem] text-ink/70">
-            <a
-              href={BUSINESS.mapsHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex gap-2.5 transition-colors hover:text-royal"
-            >
+            <span className="flex gap-2.5">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-ember" />
-              {BUSINESS.address}
-            </a>
+              Serving {BUSINESS.servingArea}
+            </span>
             <a
               href={BUSINESS.phoneHref}
               className="flex items-center gap-2.5 font-medium text-ink transition-colors hover:text-royal"

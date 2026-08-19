@@ -3,26 +3,18 @@
 import { useRef } from "react";
 import Image from "next/image";
 import { useGSAP } from "@gsap/react";
-import { BubbleAccent } from "@/components/concept/motion/Bubbles";
 import { MaskLines } from "@/components/concept/motion/MaskLines";
 import { SlideFill } from "@/components/concept/motion/SlideFill";
-import { EASE, gsap, prefersReducedMotion } from "@/lib/gsap";
+import { gsap, prefersReducedMotion } from "@/lib/gsap";
 import { BUSINESS } from "@/lib/business";
-
-const FACTS = [
-  { label: "Owner", value: BUSINESS.ownerFirstName },
-  { label: "Shop", value: "2575 Old Quarry Road" },
-  { label: "Serves", value: BUSINESS.servingArea },
-] as const;
 
 /**
  * Section 05 — Veteran owned close.
- * Editorial presence: oversized seal, full-bleed plate, fact rail.
+ * Editorial presence: large type against a full-bleed parallax plate.
  */
 export function ConceptVeteran() {
   const root = useRef<HTMLElement>(null);
   const plate = useRef<HTMLDivElement>(null);
-  const seal = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
@@ -45,19 +37,6 @@ export function ConceptVeteran() {
         );
       }
 
-      if (seal.current) {
-        gsap.from(seal.current, {
-          autoAlpha: 0,
-          y: 30,
-          duration: 1,
-          ease: EASE.premium,
-          scrollTrigger: {
-            trigger: seal.current,
-            start: "top 85%",
-            once: true,
-          },
-        });
-      }
     },
     { scope: root }
   );
@@ -82,31 +61,13 @@ export function ConceptVeteran() {
             </h2>
           </MaskLines>
 
-          {/* Oversized typographic seal */}
-          <div ref={seal} className="glass relative mt-12 inline-flex max-w-md flex-col rounded-3xl px-6 py-6 sm:px-8 sm:py-7">
-            <BubbleAccent size={34} className="-right-3 -top-4" duration={8} />
-            <span className="font-mono-meta text-ember">Verified</span>
-            <span className="mt-2 font-display text-[clamp(2rem,4vw,3.25rem)] leading-none tracking-tight text-ink">
-              Veteran Owned
-            </span>
-            <span className="mt-4 h-0.5 w-16 rounded-full bg-ember" aria-hidden="true" />
-            <p className="mt-4 text-[0.9375rem] leading-relaxed text-ink/65">
-              Owned and run by {BUSINESS.ownerFirstName} — a local shop, not a franchise.
-            </p>
-          </div>
+          <p className="mt-8 max-w-md text-[1.0625rem] leading-relaxed text-ink/65">
+            Veteran owned, and owned and run by {BUSINESS.ownerFirstName} — a local
+            shop, not a franchise. Every bag is handled by the same small team, the
+            way we would want our own laundry handled.
+          </p>
 
-          <div className="mt-10 grid gap-5 border-t border-ink/10 pt-8 sm:grid-cols-3">
-            {FACTS.map((fact) => (
-              <div key={fact.label}>
-                <p className="font-mono-meta text-ink/40">{fact.label}</p>
-                <p className="mt-1.5 text-[0.9375rem] font-medium leading-snug text-ink/85">
-                  {fact.value}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-12 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
             <SlideFill href="#pricing" variant="primary" size="lg" arrow>
               Book now
             </SlideFill>
@@ -121,14 +82,19 @@ export function ConceptVeteran() {
           <div className="absolute inset-4 overflow-hidden rounded-[28px] shadow-[0_40px_90px_-50px_rgba(20,18,41,0.65)] sm:inset-6 lg:inset-8">
             <div ref={plate} className="relative h-[120%] w-full will-change-transform">
               <Image
-                src="/images/real/machines.jpg"
-                alt="A row of washing machines lit up inside the laundromat"
+                src="/images/real/shirts-rack.jpg"
+                alt="Freshly laundered shirts hanging in a row, pressed and ready"
                 fill
                 sizes="(min-width: 1024px) 50vw, 100vw"
                 className="object-cover"
               />
             </div>
-            <p className="absolute bottom-5 left-5 right-5 font-mono-meta text-white/80">
+            {/* Scrim so the caption holds up over the lighter frames of the photo */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ink/70 to-transparent"
+            />
+            <p className="absolute bottom-5 left-5 right-5 font-mono-meta text-white/90">
               {BUSINESS.city} · Wash &amp; fold · Distance-based pickup
             </p>
           </div>

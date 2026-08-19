@@ -12,6 +12,7 @@ import { ConceptJourney } from "@/components/concept/sections/ConceptJourney";
 import { ConceptProcess } from "@/components/concept/sections/ConceptProcess";
 import { ConceptPricing } from "@/components/concept/sections/ConceptPricing";
 import { ConceptVeteran } from "@/components/concept/sections/ConceptVeteran";
+import { ConceptWhyUs } from "@/components/concept/sections/ConceptWhyUs";
 
 /**
  * Client-ready homepage — Handled cinematic concept, finalized for review.
@@ -23,11 +24,14 @@ export default function Home() {
         <ConceptSplash />
         <ConceptNav />
         <main>
+          {/* Order matters: it has to match ConceptNav's link order, or the
+              nav promises one sequence and the scroll delivers another. */}
           <ConceptHero />
           <ConceptJourney />
-          <ConceptProcess />
-          <ConceptPricing />
           <ConceptVeteran />
+          <ConceptProcess />
+          <ConceptWhyUs />
+          <ConceptPricing />
           <ConceptServeAreas />
           <ConceptFaq />
           <ConceptCloseCta />

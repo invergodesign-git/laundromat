@@ -8,7 +8,7 @@ import { Bubbles } from "@/components/concept/motion/Bubbles";
 import { MaskLines } from "@/components/concept/motion/MaskLines";
 import { SlideFillButton } from "@/components/concept/motion/SlideFill";
 import { DrawSVGPlugin, EASE, gsap, prefersReducedMotion } from "@/lib/gsap";
-import { getDistanceFromLaundry, LAUNDRY_ORIGIN } from "@/lib/distance";
+import { getDistanceFromLaundry } from "@/lib/distance";
 import {
   calculatePickupFee,
   calculateWashFoldCost,
@@ -158,9 +158,9 @@ export function ConceptPricing() {
                   <Navigation className="h-4 w-4" />
                 </span>
                 <div>
-                  <p className="font-mono-meta text-ink/45">From our shop</p>
-                  <p className="mt-1 font-mono text-[0.8125rem] leading-relaxed tracking-wide text-ink/75">
-                    {LAUNDRY_ORIGIN.address}
+                  <p className="font-mono-meta text-ink/45">Pickup &amp; delivery</p>
+                  <p className="mt-1 text-[0.9375rem] leading-relaxed text-ink/75">
+                    We collect from your door in {BUSINESS.servingArea}.
                   </p>
                 </div>
               </div>

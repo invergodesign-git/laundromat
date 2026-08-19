@@ -15,11 +15,11 @@ const FAQS = [
       PRICING_CONFIG.washFoldRatePerLb
     )} per pound, billed on the real weight of your order. Pickup and delivery runs from ${formatCurrency(
       minFee
-    )} to ${formatCurrency(maxFee)} based on how far you are from the shop.`,
+    )} to ${formatCurrency(maxFee)} based on how far you are from us.`,
   },
   {
     q: "How is the pickup fee worked out?",
-    a: `Within ${minDistanceMiles} miles of the shop, pickup is a flat ${formatCurrency(
+    a: `Within ${minDistanceMiles} miles of us, pickup is a flat ${formatCurrency(
       minFee
     )}. Past that it climbs evenly with distance and tops out at ${formatCurrency(
       maxFee
@@ -31,7 +31,7 @@ const FAQS = [
   },
   {
     q: "Which areas do you cover?",
-    a: `We're based at ${BUSINESS.address}, serving ${BUSINESS.servingArea} and nearby neighborhoods. Not sure you're in range? Call — it's a quick answer.`,
+    a: `We pick up and deliver across ${BUSINESS.servingArea} and the nearby neighborhoods. Not sure you're in range? Call — it's a quick answer.`,
   },
   {
     q: "How do I book?",
@@ -72,7 +72,9 @@ export function ConceptFaq() {
                 key={faq.q}
                 className={cn(
                   "rounded-2xl px-5 transition-colors duration-300 sm:px-6",
-                  isOpen ? "glass" : "border border-transparent hover:bg-white/45"
+                  isOpen
+                    ? "glass"
+                    : "border border-transparent border-b-ink/10 hover:bg-white/45"
                 )}
               >
                 <button

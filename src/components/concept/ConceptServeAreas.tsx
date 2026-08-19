@@ -18,9 +18,10 @@ export function ConceptServeAreas() {
           >
             Based in {BUSINESS.servingArea}.
           </h2>
-          <p className="mt-4 max-w-xl text-[0.9375rem] leading-relaxed text-ink/60">
-            Pickup and delivery are priced by how far you are from our door at{" "}
-            {BUSINESS.address}. Enter your address on Pricing to see the exact fee.
+          <p className="mt-4 max-w-xl text-[1.0625rem] leading-relaxed text-ink/60">
+            We come to you — no trip to the shop, ever. Pickup and delivery are
+            priced by how far you are from us, so enter your address on Pricing
+            and you will see the exact fee before you book.
           </p>
         </div>
 
@@ -32,12 +33,10 @@ export function ConceptServeAreas() {
             Check my price
           </a>
           <a
-            href={BUSINESS.mapsHref}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={BUSINESS.phoneHref}
             className="inline-flex h-12 items-center justify-center rounded-full bg-white/70 px-6 font-mono text-[0.75rem] font-medium uppercase tracking-[0.14em] text-ink ring-1 ring-inset ring-ink/10 transition-colors hover:bg-white"
           >
-            Get directions
+            Call {BUSINESS.ownerFirstName}
           </a>
         </div>
       </div>
