@@ -62,7 +62,7 @@ export function ConceptVeteran() {
           </MaskLines>
 
           <p className="mt-8 max-w-md text-[1.0625rem] leading-relaxed text-ink/65">
-            Veteran owned, and owned and run by {BUSINESS.ownerFirstName} — a local
+            Veteran owned, and run by the people who wash your laundry — a local
             shop, not a franchise. Every bag is handled by the same small team, the
             way we would want our own laundry handled.
           </p>

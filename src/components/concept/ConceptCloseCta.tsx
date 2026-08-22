@@ -1,10 +1,11 @@
 import { Phone } from "lucide-react";
 import { Bubbles } from "@/components/concept/motion/Bubbles";
-import { BUSINESS } from "@/lib/business";
+import { BOOKING } from "@/lib/booking";
+import { BUSINESS, SERVICE_PROMISE } from "@/lib/business";
 
 /**
- * Closing CTA — schedule pickup / call. The one saturated band on the page,
- * so the final ask reads as a change of gear rather than another section.
+ * Closing CTA — book / call. The one saturated band on the page, so the final
+ * ask reads as a change of gear rather than another section.
  */
 export function ConceptCloseCta() {
   return (
@@ -22,14 +23,15 @@ export function ConceptCloseCta() {
             Let us handle the load.
           </h2>
           <p className="mt-4 max-w-md text-[1.0625rem] leading-relaxed text-white/70">
-            Check your price, then call {BUSINESS.ownerFirstName} — veteran owned wash
-            &amp; fold with honest, distance-based pickup.
+            {SERVICE_PROMISE}
           </p>
         </div>
 
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
           <a
-            href="#pricing"
+            href={BOOKING.href}
+            target={BOOKING.target}
+            rel={BOOKING.rel}
             className="group/cta inline-flex h-14 items-center justify-center gap-3 rounded-full bg-white px-7 font-mono text-[0.875rem] font-medium uppercase tracking-[0.14em] text-royal transition hover:bg-foam"
           >
             Book now
@@ -39,10 +41,10 @@ export function ConceptCloseCta() {
           </a>
           <a
             href={BUSINESS.phoneHref}
-            className="inline-flex h-14 items-center justify-center gap-2.5 rounded-full px-7 font-mono text-[0.875rem] font-medium uppercase tracking-[0.14em] text-white ring-1 ring-inset ring-white/35 transition-colors hover:ring-white/70"
+            className="inline-flex h-14 items-center justify-center gap-2.5 rounded-full bg-ember px-7 font-mono text-[0.875rem] font-medium uppercase tracking-[0.14em] text-white shadow-[0_18px_40px_-16px_rgba(255,106,43,0.9)] transition hover:bg-ember/90"
           >
             <Phone className="h-4 w-4" />
-            Call Us
+            Call {BUSINESS.phoneDisplay}
           </a>
         </div>
       </div>

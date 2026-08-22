@@ -39,7 +39,7 @@ const STAGES = [
   {
     status: "READY",
     title: "Back at your door",
-    body: "Sealed, fresh, and delivered to the same spot we collected from. Robert confirms the drop-off time before it leaves the shop.",
+    body: "Sealed, fresh, and delivered to the same spot we collected from. We confirm the drop-off time before it leaves the shop.",
     src: "/images/real/handoff.jpg",
     alt: "A warm stack of clean folded knitwear carried back to the door",
   },
@@ -60,7 +60,7 @@ const DETAILS = [
   },
   {
     q: "What if something needs special care?",
-    a: "Tell Robert on the call. Anything delicate gets pulled out and handled separately rather than being pushed through the standard run.",
+    a: "Tell us on the call. Anything delicate gets pulled out and handled separately rather than being pushed through the standard run.",
   },
   {
     q: "When does it come back?",

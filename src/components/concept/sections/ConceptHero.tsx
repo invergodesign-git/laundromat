@@ -8,7 +8,7 @@ import { Bubbles } from "@/components/concept/motion/Bubbles";
 import { SlideFill } from "@/components/concept/motion/SlideFill";
 import { DrawSVGPlugin, EASE, gsap, prefersReducedMotion, SplitText } from "@/lib/gsap";
 import { BUSINESS } from "@/lib/business";
-import { PRICING_CONFIG } from "@/lib/pricing";
+import { DELIVERY_RATE_PER_MILE, LOWEST_RATE_PER_LB } from "@/lib/pricing";
 import { cn, formatCurrency } from "@/lib/utils";
 
 const TRUST = [
@@ -211,8 +211,9 @@ export function ConceptHero() {
 
           <p className="hero-meta mt-6 max-w-md text-[1.0625rem] leading-relaxed text-ink/65 sm:text-[1.125rem]">
             Leave the bag at your door. It comes back washed, dried and folded
-            by hand — at {formatCurrency(PRICING_CONFIG.washFoldRatePerLb)} a pound,
-            with pickup priced honestly by distance.
+            by hand — from {formatCurrency(LOWEST_RATE_PER_LB)} a pound, with
+            delivery priced honestly at {formatCurrency(DELIVERY_RATE_PER_MILE)}{" "}
+            a mile.
           </p>
 
           <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -264,7 +265,10 @@ export function ConceptHero() {
             <div className="hero-card glass absolute bottom-10 left-2 rounded-2xl px-5 py-4 sm:-left-12">
               <p className="font-mono-meta text-ink/45">Wash &amp; fold</p>
               <p className="mt-1 font-display text-[2rem] leading-none tracking-tight text-ember tabular">
-                {formatCurrency(PRICING_CONFIG.washFoldRatePerLb)}
+                <span className="mr-1 font-mono text-sm tracking-wide text-ink/45">
+                  from
+                </span>
+                {formatCurrency(LOWEST_RATE_PER_LB)}
                 <span className="ml-1 font-mono text-sm tracking-wide text-ink/45">/ lb</span>
               </p>
             </div>

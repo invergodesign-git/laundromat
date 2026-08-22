@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Loader2, MapPin, Navigation } from "lucide-react";
+import { useRef, useState, type FormEvent } from "react";
+import { Loader2, MapPin, Navigation, Plus } from "lucide-react";
 import { useGSAP } from "@gsap/react";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
 import { Bubbles } from "@/components/concept/motion/Bubbles";
@@ -10,21 +10,27 @@ import { SlideFillButton } from "@/components/concept/motion/SlideFill";
 import { DrawSVGPlugin, EASE, gsap, prefersReducedMotion } from "@/lib/gsap";
 import { getDistanceFromLaundry } from "@/lib/distance";
 import {
-  calculatePickupFee,
-  calculateWashFoldCost,
-  PRICING_CONFIG,
+  ADD_ONS,
+  calculateEstimate,
+  DEFAULT_TIER_ID,
+  DELIVERY_RATE_PER_MILE,
+  LOWEST_RATE_PER_LB,
+  MIN_ORDER_LBS,
+  TURNAROUND_TIERS,
 } from "@/lib/pricing";
 import { BUSINESS } from "@/lib/business";
-import { cn, formatCurrency, roundToCent } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 type Status = "idle" | "loading" | "done" | "error";
 
-const WEIGHTS = [10, 20, 30, 40] as const;
+const WEIGHTS = [24, 32, 40, 60] as const;
 
 /**
- * Section 04 — Interactive pickup pricing.
- * A single glass instrument panel (rate cards + live estimate) rather than a
- * split form/result that read as unfinished.
+ * Interactive delivery pricing.
+ *
+ * Every number rendered here comes from `lib/pricing.ts` — the tier rates,
+ * the 24 lb minimum and the per-mile delivery rate. Nothing is hardcoded, so
+ * a price change is a one-file edit.
  */
 export function ConceptPricing() {
   const root = useRef<HTMLElement>(null);
@@ -34,11 +40,22 @@ export function ConceptPricing() {
   const [status, setStatus] = useState<Status>("idle");
   const [distanceMiles, setDistanceMiles] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [weightLbs, setWeightLbs] = useState(20);
+  const [weightLbs, setWeightLbs] = useState<number>(MIN_ORDER_LBS);
+  const [tierId, setTierId] = useState<string>(DEFAULT_TIER_ID);
+  const [addOnIds, setAddOnIds] = useState<string[]>([]);
 
-  const washFold = calculateWashFoldCost(weightLbs);
-  const pickupFee = distanceMiles !== null ? calculatePickupFee(distanceMiles) : null;
-  const total = pickupFee !== null ? roundToCent(washFold + pickupFee) : null;
+  const estimate = calculateEstimate({
+    weightLbs,
+    distanceMiles: distanceMiles ?? 0,
+    tierId,
+    addOnIds,
+  });
+  const hasDistance = distanceMiles !== null && status === "done";
+
+  const toggleAddOn = (id: string) =>
+    setAddOnIds((ids) =>
+      ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]
+    );
 
   useGSAP(
     () => {
@@ -46,8 +63,9 @@ export function ConceptPricing() {
       if (!routeRef.current) return;
 
       if (status !== "done" || prefersReducedMotion()) {
-        if (status === "done") gsap.set(routeRef.current, { drawSVG: "100%" });
-        else gsap.set(routeRef.current, { drawSVG: "0%" });
+        gsap.set(routeRef.current, {
+          drawSVG: status === "done" ? "100%" : "0%",
+        });
         return;
       }
 
@@ -84,7 +102,6 @@ export function ConceptPricing() {
       ref={root}
       className="relative overflow-hidden bg-foam py-20 sm:py-24 lg:py-28"
     >
-      {/* Soft ambient field behind the instrument */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
         <div className="absolute -right-[12%] top-[12%] h-[36rem] w-[36rem] rounded-full bg-rich/20 blur-[130px]" />
         <div className="absolute -left-[10%] bottom-[4%] h-[30rem] w-[30rem] rounded-full bg-aqua/22 blur-[120px]" />
@@ -97,94 +114,79 @@ export function ConceptPricing() {
             <p className="font-mono-meta text-royal">Pricing</p>
             <MaskLines className="mt-3 max-w-3xl">
               <h2 className="font-display text-[clamp(2rem,5vw,3.75rem)] leading-[0.98] tracking-[-0.02em] text-ink">
-                Your location.
+                Pick your speed.
                 <br />
-                Your distance.
+                See your price.
                 <br />
-                Your price.
+                Then call us.
               </h2>
             </MaskLines>
           </div>
           <p className="max-w-xs font-mono-meta text-ink/45 lg:text-right">
-            {formatCurrency(PRICING_CONFIG.washFoldRatePerLb)} / lb · pickup by distance
+            from {formatCurrency(LOWEST_RATE_PER_LB)} / lb ·{" "}
+            {formatCurrency(DELIVERY_RATE_PER_MILE)} per mile
           </p>
         </div>
 
-        {/* Scannable rate cards — competitor-style clarity before the calculator */}
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:mt-10 lg:grid-cols-3 lg:gap-4">
-          <div className="glass rounded-2xl px-6 py-6">
-            <p className="font-mono-meta text-ink/45">Wash &amp; Fold</p>
-            <p className="mt-3 font-display text-[2.25rem] leading-none tracking-tight text-ember tabular">
-              {formatCurrency(PRICING_CONFIG.washFoldRatePerLb)}
-              <span className="ml-1 font-mono text-sm tracking-wide text-ink/45">/ lb</span>
-            </p>
-            <p className="mt-3 text-[0.875rem] leading-relaxed text-ink/60">
-              Billed on the real weight of your order.
-            </p>
-          </div>
-          <div className="glass rounded-2xl px-6 py-6">
-            <p className="font-mono-meta text-ink/45">Pickup &amp; Delivery</p>
-            <p className="mt-3 font-display text-[2.25rem] leading-none tracking-tight text-ink tabular">
-              {formatCurrency(PRICING_CONFIG.pickup.minFee)}
-              <span className="mx-1 font-mono text-sm text-ink/40">–</span>
-              {formatCurrency(PRICING_CONFIG.pickup.maxFee)}
-            </p>
-            <p className="mt-3 text-[0.875rem] leading-relaxed text-ink/60">
-              {PRICING_CONFIG.pickup.minDistanceMiles}–{PRICING_CONFIG.pickup.maxDistanceMiles} mi
-              from the shop, by distance.
-            </p>
-          </div>
-          <div className="glass rounded-2xl px-6 py-6 sm:col-span-2 lg:col-span-1">
-            <p className="font-mono-meta text-ink/45">How to book</p>
-            <p className="mt-3 font-display text-[1.75rem] leading-none tracking-tight text-ink">
-              Check price → call
-            </p>
-            <p className="mt-3 text-[0.875rem] leading-relaxed text-ink/60">
-              Enter your address below, then call {BUSINESS.ownerFirstName} to schedule.
-            </p>
-          </div>
-        </div>
-
-        {/* Single glass instrument — live estimate */}
         <form
           onSubmit={handleSubmit}
-          className="glass mt-6 overflow-hidden rounded-[28px] lg:mt-8"
+          className="glass mt-10 overflow-hidden rounded-[28px]"
         >
           <div className="grid lg:grid-cols-12">
             {/* Controls */}
-            <div className="border-b border-white/70 p-6 sm:p-9 lg:col-span-5 lg:border-b-0 lg:border-r lg:p-11">
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-royal/10 text-royal">
-                  <Navigation className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="font-mono-meta text-ink/45">Pickup &amp; delivery</p>
-                  <p className="mt-1 text-[0.9375rem] leading-relaxed text-ink/75">
-                    We collect from your door in {BUSINESS.servingArea}.
-                  </p>
+            <div className="border-b border-white/70 p-6 sm:p-9 lg:col-span-6 lg:border-b-0 lg:border-r lg:p-11">
+              <div>
+                <p className="font-mono-meta text-ink/45">
+                  1 — How fast do you need it?
+                </p>
+                <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+                  {TURNAROUND_TIERS.map((tier) => {
+                    const selected = tier.id === tierId;
+                    return (
+                      <button
+                        key={tier.id}
+                        type="button"
+                        onClick={() => setTierId(tier.id)}
+                        aria-pressed={selected}
+                        className={cn(
+                          "rounded-2xl px-4 py-3.5 text-left transition-all duration-300",
+                          tier.isSubscription && "sm:col-span-2",
+                          selected
+                            ? "bg-royal text-white shadow-[0_16px_34px_-16px_rgba(69,54,214,0.9)]"
+                            : "bg-white/70 text-ink ring-1 ring-inset ring-ink/10 hover:bg-white"
+                        )}
+                      >
+                        <span className="flex items-baseline justify-between gap-3">
+                          <span className="text-[0.9375rem] font-semibold tracking-tight">
+                            {tier.label}
+                          </span>
+                          <span
+                            className={cn(
+                              "tabular font-display text-[1.25rem] leading-none",
+                              selected ? "text-white" : "text-ember"
+                            )}
+                          >
+                            {formatCurrency(tier.ratePerLb)}
+                          </span>
+                        </span>
+                        <span
+                          className={cn(
+                            "mt-1 block text-[0.8125rem] leading-snug",
+                            selected ? "text-white/75" : "text-ink/55"
+                          )}
+                        >
+                          {tier.summary}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               <div className="mt-8">
-                <label htmlFor="concept-address" className="font-mono-meta text-ink/45">
-                  Where should we pick up?
-                </label>
-                <div className="relative mt-3">
-                  <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-royal" />
-                  <input
-                    id="concept-address"
-                    type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Street address, San Diego"
-                    autoComplete="street-address"
-                    className="h-14 w-full rounded-2xl border border-ink/10 bg-white/85 pl-11 pr-4 font-geist text-base text-ink outline-none transition-colors placeholder:text-ink/35 focus:border-royal/60"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-7">
-                <p className="font-mono-meta text-ink/45">Rough weight</p>
+                <p className="font-mono-meta text-ink/45">
+                  2 — Roughly how heavy?
+                </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {WEIGHTS.map((w) => (
                     <button
@@ -202,12 +204,70 @@ export function ConceptPricing() {
                     </button>
                   ))}
                 </div>
-                <p className="mt-3 text-[0.75rem] text-ink/45">
-                  A full kitchen bin is usually around 20 lb.
+                <p className="mt-3 text-[0.8125rem] leading-relaxed text-ink/50">
+                  {MIN_ORDER_LBS} lb is our minimum — a full tall hamper is
+                  usually around there.
                 </p>
               </div>
 
               <div className="mt-8">
+                <p className="font-mono-meta text-ink/45">
+                  3 — Anything extra?
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {ADD_ONS.map((addOn) => {
+                    const on = addOnIds.includes(addOn.id);
+                    return (
+                      <button
+                        key={addOn.id}
+                        type="button"
+                        onClick={() => toggleAddOn(addOn.id)}
+                        aria-pressed={on}
+                        className={cn(
+                          "inline-flex h-11 items-center gap-2 rounded-full px-4 text-[0.8125rem] font-medium transition-colors",
+                          on
+                            ? "bg-mint text-ink"
+                            : "bg-white/70 text-ink/65 ring-1 ring-inset ring-ink/10 hover:bg-white"
+                        )}
+                      >
+                        <Plus
+                          className={cn(
+                            "h-3.5 w-3.5 transition-transform duration-300",
+                            on && "rotate-45"
+                          )}
+                        />
+                        {addOn.label}
+                        <span className="font-mono text-[0.6875rem] text-ink/50">
+                          {addOn.rateLabel}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="mt-8">
+                <label
+                  htmlFor="concept-address"
+                  className="font-mono-meta text-ink/45"
+                >
+                  4 — Where should we pick up?
+                </label>
+                <div className="relative mt-3">
+                  <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-royal" />
+                  <input
+                    id="concept-address"
+                    type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Street address, San Diego"
+                    autoComplete="street-address"
+                    className="h-14 w-full rounded-2xl border border-ink/10 bg-white/85 pl-11 pr-4 font-geist text-base text-ink outline-none transition-colors placeholder:text-ink/35 focus:border-royal/60"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6">
                 <SlideFillButton
                   type="submit"
                   variant="primary"
@@ -234,27 +294,31 @@ export function ConceptPricing() {
             </div>
 
             {/* Live estimate */}
-            <div className="relative p-6 sm:p-9 lg:col-span-7 lg:p-11">
+            <div className="relative p-6 sm:p-9 lg:col-span-6 lg:p-11">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="font-mono-meta text-ink/45">Estimated total</p>
-                  <p className="mt-2 font-display text-[clamp(3rem,8vw,5.5rem)] leading-none tracking-tight text-ember tabular">
-                    {total !== null ? (
-                      <AnimatedCounter value={total} decimals={2} prefix="$" />
+                  <p className="mt-2 font-display text-[clamp(3rem,7vw,5rem)] leading-none tracking-tight text-ember tabular">
+                    {hasDistance ? (
+                      <AnimatedCounter
+                        value={estimate.total}
+                        decimals={2}
+                        prefix="$"
+                      />
                     ) : (
                       <span className="text-ink/15">$—</span>
                     )}
                   </p>
                 </div>
                 <p className="max-w-[10rem] text-right font-mono-meta text-ink/35">
-                  {status === "done"
-                    ? "Includes wash & fold + pickup"
-                    : "Enter an address to unlock"}
+                  {hasDistance
+                    ? "Laundry + delivery"
+                    : "Add an address to unlock"}
                 </p>
               </div>
 
               {/* Route visual */}
-              <div className="mt-8 rounded-2xl border border-white/70 bg-white/60 px-4 py-5 sm:px-6">
+              <div className="mt-7 rounded-2xl border border-white/70 bg-white/60 px-4 py-5 sm:px-6">
                 <svg
                   viewBox="0 0 640 160"
                   className="h-auto w-full text-royal"
@@ -279,7 +343,7 @@ export function ConceptPricing() {
                     cx="604"
                     cy="36"
                     r="5"
-                    fill={status === "done" ? "#FF6A2B" : "transparent"}
+                    fill={hasDistance ? "#FF6A2B" : "transparent"}
                     stroke="currentColor"
                     strokeWidth="1.5"
                   />
@@ -292,7 +356,7 @@ export function ConceptPricing() {
                     fontFamily="monospace"
                     letterSpacing="1.4"
                   >
-                    SHOP
+                    US
                   </text>
                   <text
                     x="604"
@@ -309,48 +373,65 @@ export function ConceptPricing() {
                 </svg>
               </div>
 
-              {/* Glass metric tiles */}
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <Metric
-                  label="Distance"
-                  value={
-                    distanceMiles !== null && status === "done" ? (
-                      <>
-                        <AnimatedCounter value={distanceMiles} decimals={1} />
-                        <span className="ml-1 text-base text-ink/45">mi</span>
-                      </>
+              {/* Itemised breakdown */}
+              <dl className="mt-7 divide-y divide-ink/10 border-y border-ink/10">
+                {estimate.lines.map((line) => (
+                  <div
+                    key={line.id}
+                    className="flex items-baseline justify-between gap-4 py-3.5"
+                  >
+                    <dt className="text-[0.9375rem] text-ink/75">
+                      {line.label}
+                      {line.note && (
+                        <span className="mt-0.5 block font-mono text-[0.6875rem] uppercase tracking-[0.1em] text-ink/40">
+                          {line.note}
+                        </span>
+                      )}
+                    </dt>
+                    <dd className="tabular shrink-0 font-display text-xl text-ink">
+                      {formatCurrency(line.amount)}
+                    </dd>
+                  </div>
+                ))}
+                <div className="flex items-baseline justify-between gap-4 py-3.5">
+                  <dt className="text-[0.9375rem] text-ink/75">
+                    Delivery
+                    <span className="mt-0.5 block font-mono text-[0.6875rem] uppercase tracking-[0.1em] text-ink/40">
+                      {hasDistance
+                        ? `${estimate.distanceMiles} mi × ${formatCurrency(
+                            DELIVERY_RATE_PER_MILE
+                          )}`
+                        : `${formatCurrency(DELIVERY_RATE_PER_MILE)} per mile`}
+                    </span>
+                  </dt>
+                  <dd className="tabular shrink-0 font-display text-xl text-ink">
+                    {hasDistance ? (
+                      formatCurrency(estimate.deliveryFee)
                     ) : (
                       <span className="text-ink/20">—</span>
-                    )
-                  }
-                />
-                <Metric
-                  label="Pickup & delivery"
-                  value={
-                    pickupFee !== null ? (
-                      <AnimatedCounter value={pickupFee} decimals={2} prefix="$" />
-                    ) : (
-                      <span className="text-ink/20">—</span>
-                    )
-                  }
-                />
-                <Metric
-                  label={`Wash & fold · ${weightLbs} lb`}
-                  value={<AnimatedCounter value={washFold} decimals={2} prefix="$" />}
-                />
-              </div>
+                    )}
+                  </dd>
+                </div>
+              </dl>
 
-              <div className="mt-8 flex flex-col gap-3 border-t border-ink/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
+              {estimate.minimumApplied && (
+                <p className="mt-4 flex items-start gap-2.5 rounded-2xl bg-royal/8 px-4 py-3 text-[0.8125rem] leading-relaxed text-ink/70">
+                  <Navigation className="mt-0.5 h-3.5 w-3.5 shrink-0 text-royal" />
+                  Billed at our {MIN_ORDER_LBS} lb minimum. If your bag comes in
+                  lighter, we may credit the difference to your next order.
+                </p>
+              )}
+
+              <div className="mt-7 flex flex-col gap-3 border-t border-ink/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
                 <p className="max-w-md text-[0.75rem] leading-relaxed text-ink/45">
-                  Distances use a demo estimator — not a live map.{" "}
-                  {formatCurrency(PRICING_CONFIG.washFoldRatePerLb)} / lb is billed on the real
-                  weight. Nothing is charged here.
+                  Distances use a demo estimator, not a live map. Final weight
+                  is measured when we collect. Nothing is charged here.
                 </p>
                 <a
                   href={BUSINESS.phoneHref}
-                  className="font-mono-meta text-ink/70 transition-colors hover:text-royal"
+                  className="font-mono-meta whitespace-nowrap text-ink/70 transition-colors hover:text-royal"
                 >
-                  Book with {BUSINESS.ownerFirstName} →
+                  Call to book →
                 </a>
               </div>
             </div>
@@ -358,14 +439,5 @@ export function ConceptPricing() {
         </form>
       </div>
     </section>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="rounded-2xl border border-white/70 bg-white/55 px-4 py-4 sm:px-5">
-      <p className="font-mono-meta text-ink/40">{label}</p>
-      <p className="mt-2 font-display text-2xl text-ink tabular sm:text-3xl">{value}</p>
-    </div>
   );
 }

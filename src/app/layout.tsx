@@ -30,7 +30,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "California Laundromat — Wash & Fold Pickup & Delivery, San Diego",
   description:
-    "Veteran owned wash & fold in San Diego. $3.25 per pound, with pickup and delivery priced fairly by how far you are from our door.",
+    "Veteran owned wash & fold pickup and delivery in San Diego. Per-pound pricing with the turnaround you choose, and delivery charged fairly by the mile.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

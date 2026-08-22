@@ -36,7 +36,7 @@ export function ConceptServeAreas() {
             href={BUSINESS.phoneHref}
             className="inline-flex h-12 items-center justify-center rounded-full bg-white/70 px-6 font-mono text-[0.75rem] font-medium uppercase tracking-[0.14em] text-ink ring-1 ring-inset ring-ink/10 transition-colors hover:bg-white"
           >
-            Call {BUSINESS.ownerFirstName}
+            Call {BUSINESS.phoneDisplay}
           </a>
         </div>
       </div>

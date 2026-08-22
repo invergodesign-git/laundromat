@@ -6,17 +6,18 @@ import { ConceptNav } from "@/components/concept/ConceptNav";
 import { ConceptServeAreas } from "@/components/concept/ConceptServeAreas";
 import { ConceptSplash } from "@/components/concept/ConceptSplash";
 import { IntroProvider } from "@/components/concept/IntroContext";
+import { ConceptBlogTeaser } from "@/components/concept/sections/ConceptBlogTeaser";
 import { ConceptFaq } from "@/components/concept/sections/ConceptFaq";
 import { ConceptHero } from "@/components/concept/sections/ConceptHero";
 import { ConceptJourney } from "@/components/concept/sections/ConceptJourney";
-import { ConceptProcess } from "@/components/concept/sections/ConceptProcess";
 import { ConceptPricing } from "@/components/concept/sections/ConceptPricing";
+import { ConceptProcess } from "@/components/concept/sections/ConceptProcess";
+import { ConceptReviews } from "@/components/concept/sections/ConceptReviews";
+import { ConceptServicesTeaser } from "@/components/concept/sections/ConceptServicesTeaser";
 import { ConceptVeteran } from "@/components/concept/sections/ConceptVeteran";
 import { ConceptWhyUs } from "@/components/concept/sections/ConceptWhyUs";
 
-/**
- * Client-ready homepage — Handled cinematic concept, finalized for review.
- */
+/** Homepage — the only route that runs the splash intro. */
 export default function Home() {
   return (
     <IntroProvider>
@@ -24,15 +25,16 @@ export default function Home() {
         <ConceptSplash />
         <ConceptNav />
         <main>
-          {/* Order matters: it has to match ConceptNav's link order, or the
-              nav promises one sequence and the scroll delivers another. */}
           <ConceptHero />
           <ConceptJourney />
           <ConceptVeteran />
           <ConceptProcess />
+          <ConceptServicesTeaser />
           <ConceptWhyUs />
           <ConceptPricing />
+          <ConceptReviews />
           <ConceptServeAreas />
+          <ConceptBlogTeaser />
           <ConceptFaq />
           <ConceptCloseCta />
         </main>

@@ -2,32 +2,39 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { BUSINESS } from "@/lib/business";
-import { PRICING_CONFIG } from "@/lib/pricing";
+import { BUSINESS, PROCESS } from "@/lib/business";
+import {
+  DELIVERY_RATE_PER_MILE,
+  LOWEST_RATE_PER_LB,
+  MIN_ORDER_LBS,
+  TURNAROUND_TIERS,
+} from "@/lib/pricing";
 import { cn, formatCurrency } from "@/lib/utils";
 
-const { minFee, maxFee, minDistanceMiles, maxDistanceMiles } = PRICING_CONFIG.pickup;
+const fastest = TURNAROUND_TIERS[0];
 
 const FAQS = [
   {
     q: "What does it cost?",
-    a: `Wash & fold is ${formatCurrency(
-      PRICING_CONFIG.washFoldRatePerLb
-    )} per pound, billed on the real weight of your order. Pickup and delivery runs from ${formatCurrency(
-      minFee
-    )} to ${formatCurrency(maxFee)} based on how far you are from us.`,
+    a: `Wash & fold starts at ${formatCurrency(
+      LOWEST_RATE_PER_LB
+    )} per pound and the rate rises the faster you need it back. Delivery is a flat ${formatCurrency(
+      DELIVERY_RATE_PER_MILE
+    )} per mile, so you can check the number yourself before you book.`,
   },
   {
-    q: "How is the pickup fee worked out?",
-    a: `Within ${minDistanceMiles} miles of us, pickup is a flat ${formatCurrency(
-      minFee
-    )}. Past that it climbs evenly with distance and tops out at ${formatCurrency(
-      maxFee
-    )} at ${maxDistanceMiles} miles — so it never runs away from you.`,
+    q: "Is there a minimum order?",
+    a: `Yes — ${MIN_ORDER_LBS} lbs. If your bag comes in under that we may issue a store credit for the difference against your next order, so you are not paying for pounds you never used.`,
   },
   {
-    q: "How long does it take?",
-    a: `Orders are sorted, washed, dried, and folded by hand — not rushed. ${BUSINESS.ownerFirstName} confirms turnaround when you book, so you're never guessing.`,
+    q: "How fast can I get it back?",
+    a: `${fastest.label} returns your laundry within 12 hours at ${formatCurrency(
+      fastest.ratePerLb
+    )} per pound. One, two and three day options cost progressively less, and a monthly subscription is cheaper again if you are happy with a fixed weekly slot.`,
+  },
+  {
+    q: "What detergent do you use?",
+    a: PROCESS.body,
   },
   {
     q: "Which areas do you cover?",
@@ -35,11 +42,11 @@ const FAQS = [
   },
   {
     q: "How do I book?",
-    a: `Check your price with the calculator, then call ${BUSINESS.ownerFirstName} to arrange pickup. Nothing is charged on this website, and you're not signing up to anything.`,
+    a: "Check your price with the calculator, then call us to arrange pickup. Nothing is charged on this website, and you're not signing up to anything.",
   },
   {
     q: "Is this veteran owned?",
-    a: `Yes. ${BUSINESS.name} is owned and run by ${BUSINESS.ownerFirstName} — a local shop, not a franchise.`,
+    a: `Yes. ${BUSINESS.name} is a veteran owned local business — not a franchise with a call centre.`,
   },
 ] as const;
 

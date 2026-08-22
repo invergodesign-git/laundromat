@@ -15,7 +15,7 @@ import { useIntro } from "@/components/concept/IntroContext";
 import { BubbleAccent } from "@/components/concept/motion/Bubbles";
 import { MaskLines } from "@/components/concept/motion/MaskLines";
 import { EASE, gsap, prefersReducedMotion } from "@/lib/gsap";
-import { BUSINESS } from "@/lib/business";
+import { BUSINESS, SERVICE_PROMISE } from "@/lib/business";
 
 /**
  * Each card leans a different way and carries its own accent colour so the
@@ -49,7 +49,7 @@ const REASONS = [
   {
     icon: ShieldCheck,
     title: "Veteran owned",
-    body: `Owned and run by ${BUSINESS.ownerFirstName} — a local shop, not a franchise with a call centre.`,
+    body: "Owned and run locally by the people who wash your laundry — not a franchise with a call centre.",
     tint: "bg-mint text-ink",
     tilt: "rotate-1",
     src: "/images/real/shop.jpg",
@@ -57,7 +57,7 @@ const REASONS = [
   {
     icon: Clock3,
     title: "No surprise waiting",
-    body: `${BUSINESS.ownerFirstName} confirms your turnaround when you book, so you always know when the bag is coming back.`,
+    body: "You pick the turnaround when you book — 12 hours to three days — so you always know when the bag is coming back.",
     tint: "bg-blush text-ink",
     tilt: "-rotate-2",
     src: "/images/real/van.jpg",
@@ -172,14 +172,12 @@ export function ConceptWhyUs() {
         <div className="relative mt-14 overflow-hidden rounded-[32px] bg-white px-7 py-10 sm:px-12 sm:py-12 lg:mt-16">
           <BubbleAccent size={72} className="-bottom-6 right-8 opacity-70" duration={9} />
           <div className="relative max-w-3xl">
-            <p className="font-mono-meta text-ember">Straight up</p>
+            <p className="font-mono-meta text-ember">Our service promise</p>
             <p className="mt-4 font-display text-[clamp(1.5rem,3vw,2.5rem)] leading-[1.15] tracking-tight text-ink">
-              &ldquo;If it comes back wrong, tell me and I will fix it. That is
-              the whole promise — there is no department to escalate to,
-              it&rsquo;s just me.&rdquo;
+              &ldquo;{SERVICE_PROMISE}&rdquo;
             </p>
             <p className="mt-6 text-[1rem] font-medium text-ink/55">
-              {BUSINESS.ownerFirstName} · Owner, {BUSINESS.name}
+              {BUSINESS.name} · Veteran owned, {BUSINESS.servingArea}
             </p>
           </div>
         </div>

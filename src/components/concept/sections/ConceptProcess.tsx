@@ -10,6 +10,8 @@ import { MaskLines } from "@/components/concept/motion/MaskLines";
 import { SlideFill } from "@/components/concept/motion/SlideFill";
 import { EASE, gsap, prefersReducedMotion } from "@/lib/gsap";
 import { BUSINESS } from "@/lib/business";
+import { DELIVERY_RATE_PER_MILE, LOWEST_RATE_PER_LB } from "@/lib/pricing";
+import { formatCurrency } from "@/lib/utils";
 
 const SERVICES = [
   {
@@ -135,9 +137,12 @@ export function ConceptProcess() {
 
           <p className="mt-7 max-w-2xl text-[1.125rem] leading-relaxed text-ink/65 sm:text-[1.25rem]">
             You never have to set foot in the shop. We collect your bag, run it
-            through wash, dry and fold, then bring it back to the same door — at{" "}
-            <span className="font-semibold text-ember">{BUSINESS.washFoldRateLabel}</span>,
-            with pickup priced by distance.
+            through wash, dry and fold, then bring it back to the same door —
+            from{" "}
+            <span className="font-semibold text-ember">
+              {formatCurrency(LOWEST_RATE_PER_LB)} a pound
+            </span>
+            , with delivery at {formatCurrency(DELIVERY_RATE_PER_MILE)} a mile.
           </p>
         </div>
 
@@ -262,7 +267,7 @@ export function ConceptProcess() {
                 href={BUSINESS.phoneHref}
                 className="inline-flex h-14 items-center justify-center rounded-full px-7 font-mono text-[0.875rem] font-medium uppercase tracking-[0.14em] text-white ring-1 ring-inset ring-white/35 transition-colors hover:ring-white/70"
               >
-                Call {BUSINESS.ownerFirstName}
+                Call {BUSINESS.phoneDisplay}
               </a>
             </div>
           </div>

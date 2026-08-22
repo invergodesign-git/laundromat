@@ -1,25 +1,26 @@
 /**
  * Distance / geocoding layer.
  *
- * This module is intentionally isolated from the UI and from `pricing.ts`.
- * Today it contains a DEMO stand-in that fabricates a plausible distance
- * from an address string. It does NOT call any real mapping service.
+ * Isolated from the UI and from `pricing.ts` on purpose. Today it contains a
+ * DEMO stand-in that fabricates a plausible distance from an address string.
+ * It does NOT call any real mapping service.
  *
  * To wire in a real provider later (Google Distance Matrix, Mapbox
- * Directions, etc.), replace the body of `getDistanceFromLaundry` with a
- * real API call — the function signature and `DistanceResult` shape can
- * stay exactly the same, so no UI code needs to change.
+ * Directions, etc.), replace the body of `getDistanceFromLaundry` with a real
+ * API call — the signature and `DistanceResult` shape can stay exactly the
+ * same, so no UI code needs to change.
+ *
+ * The shop's street address is deliberately not stored here; the business
+ * does not publish it. Only the service area is surfaced to customers.
  */
 
 export const LAUNDRY_ORIGIN = {
-  label: "Main Laundry Location",
-  address: "2575 Old Quarry Road, San Diego, CA",
-  city: "San Diego, CA",
+  label: "Our pickup base",
+  serviceArea: "Mission Valley, San Diego",
 } as const;
 
 export interface DistanceResult {
   distanceMiles: number;
-  originAddress: string;
   destinationAddress: string;
   /** True when this came from the demo estimator, not a real geocoding API. */
   isDemoEstimate: true;
@@ -28,10 +29,10 @@ export interface DistanceResult {
 /**
  * DEMO ONLY — deterministic pseudo-distance generator.
  *
- * Hashes the entered address into a stable number between ~0.6 and ~14
- * miles, so the same address always produces the same demo result. This is
- * a placeholder for a real driving-distance lookup and must not be
- * presented to users as an actual Google Maps / geocoding calculation.
+ * Hashes the entered address into a stable number between ~0.6 and ~14 miles,
+ * so the same address always produces the same demo result. This is a
+ * placeholder for a real driving-distance lookup and must not be presented to
+ * users as an actual geocoding calculation.
  */
 function estimateDemoDistanceMiles(address: string): number {
   const normalized = address.trim().toLowerCase();
@@ -50,9 +51,9 @@ function estimateDemoDistanceMiles(address: string): number {
 }
 
 /**
- * Resolves the pickup distance (in miles) for a given address, relative to
- * `LAUNDRY_ORIGIN`. Simulates realistic network latency so the loading
- * state in the UI feels honest about "calculating" something.
+ * Resolves the pickup distance (in miles) for a given address. Simulates
+ * realistic network latency so the loading state in the UI is honest about
+ * "calculating" something.
  *
  * DEMO IMPLEMENTATION — see module comment above.
  */
@@ -71,7 +72,6 @@ export async function getDistanceFromLaundry(
 
   return {
     distanceMiles: estimateDemoDistanceMiles(trimmed),
-    originAddress: LAUNDRY_ORIGIN.address,
     destinationAddress: trimmed,
     isDemoEstimate: true,
   };
