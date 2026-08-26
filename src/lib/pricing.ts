@@ -18,6 +18,21 @@ export const MIN_ORDER_LBS = 24;
 export const DELIVERY_RATE_PER_MILE = 0.77;
 
 /**
+ * How far out we quote a delivery price. Beyond this the calculator stops
+ * guessing and asks the customer to call, rather than quoting a run the
+ * business may not want to make.
+ */
+export const MAX_SERVICE_RADIUS_MILES = 25;
+
+export function isWithinServiceArea(distanceMiles: number): boolean {
+  return (
+    Number.isFinite(distanceMiles) &&
+    distanceMiles >= 0 &&
+    distanceMiles <= MAX_SERVICE_RADIUS_MILES
+  );
+}
+
+/**
  * What happens when a bag comes in under the minimum. Kept as copy rather
  * than logic because it is a discretionary goodwill policy, not a rule the
  * calculator can apply on its own.

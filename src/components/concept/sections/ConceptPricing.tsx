@@ -1,20 +1,23 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
-import { Loader2, MapPin, Navigation, Plus } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
+import { Loader2, Navigation, Phone, Plus } from "lucide-react";
 import { useGSAP } from "@gsap/react";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
+import { AddressAutocomplete } from "@/components/concept/AddressAutocomplete";
 import { Bubbles } from "@/components/concept/motion/Bubbles";
 import { MaskLines } from "@/components/concept/motion/MaskLines";
-import { SlideFillButton } from "@/components/concept/motion/SlideFill";
 import { DrawSVGPlugin, EASE, gsap, prefersReducedMotion } from "@/lib/gsap";
-import { getDistanceFromLaundry } from "@/lib/distance";
+import { fetchDistanceMiles } from "@/lib/geo/client";
+import { GeoError, type AddressSuggestion } from "@/lib/geo/types";
 import {
   ADD_ONS,
   calculateEstimate,
   DEFAULT_TIER_ID,
   DELIVERY_RATE_PER_MILE,
+  isWithinServiceArea,
   LOWEST_RATE_PER_LB,
+  MAX_SERVICE_RADIUS_MILES,
   MIN_ORDER_LBS,
   TURNAROUND_TIERS,
 } from "@/lib/pricing";
@@ -28,15 +31,17 @@ const WEIGHTS = [24, 32, 40, 60] as const;
 /**
  * Interactive delivery pricing.
  *
- * Every number rendered here comes from `lib/pricing.ts` — the tier rates,
- * the 24 lb minimum and the per-mile delivery rate. Nothing is hardcoded, so
- * a price change is a one-file edit.
+ * Every number rendered here comes from `lib/pricing.ts` — the tier rates, the
+ * 24 lb minimum and the per-mile delivery rate. The mileage itself is a real
+ * driving distance measured server-side from a picked address; if that lookup
+ * is unavailable the calculator says so and points people at the phone rather
+ * than showing a price built on a guess.
  */
 export function ConceptPricing() {
   const root = useRef<HTMLElement>(null);
   const routeRef = useRef<SVGPathElement>(null);
+  const lookup = useRef<AbortController | null>(null);
 
-  const [address, setAddress] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [distanceMiles, setDistanceMiles] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,28 +49,69 @@ export function ConceptPricing() {
   const [tierId, setTierId] = useState<string>(DEFAULT_TIER_ID);
   const [addOnIds, setAddOnIds] = useState<string[]>([]);
 
+  const outOfArea =
+    status === "done" &&
+    distanceMiles !== null &&
+    !isWithinServiceArea(distanceMiles);
+  const hasDistance =
+    status === "done" && distanceMiles !== null && !outOfArea;
+
   const estimate = calculateEstimate({
     weightLbs,
-    distanceMiles: distanceMiles ?? 0,
+    distanceMiles: hasDistance ? distanceMiles : 0,
     tierId,
     addOnIds,
   });
-  const hasDistance = distanceMiles !== null && status === "done";
 
   const toggleAddOn = (id: string) =>
     setAddOnIds((ids) =>
       ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]
     );
 
+  const handleSelect = useCallback(async (suggestion: AddressSuggestion) => {
+    lookup.current?.abort();
+    const controller = new AbortController();
+    lookup.current = controller;
+
+    setStatus("loading");
+    setError(null);
+    setDistanceMiles(null);
+
+    try {
+      const miles = await fetchDistanceMiles(suggestion, controller.signal);
+      if (controller.signal.aborted) return;
+      setDistanceMiles(miles);
+      setStatus("done");
+    } catch (err) {
+      if (controller.signal.aborted) return;
+      setStatus("error");
+      setError(
+        err instanceof GeoError
+          ? err.message
+          : "We could not measure that address."
+      );
+    }
+  }, []);
+
+  const handleClear = useCallback(() => {
+    lookup.current?.abort();
+    setStatus("idle");
+    setDistanceMiles(null);
+    setError(null);
+  }, []);
+
+  const handleUnavailable = useCallback((message: string) => {
+    setStatus("error");
+    setError(message);
+  }, []);
+
   useGSAP(
     () => {
       void DrawSVGPlugin;
       if (!routeRef.current) return;
 
-      if (status !== "done" || prefersReducedMotion()) {
-        gsap.set(routeRef.current, {
-          drawSVG: status === "done" ? "100%" : "0%",
-        });
+      if (!hasDistance || prefersReducedMotion()) {
+        gsap.set(routeRef.current, { drawSVG: hasDistance ? "100%" : "0%" });
         return;
       }
 
@@ -75,26 +121,8 @@ export function ConceptPricing() {
         { drawSVG: "100%", duration: 1.35, ease: EASE.softInOut }
       );
     },
-    { dependencies: [status, distanceMiles], scope: root }
+    { dependencies: [hasDistance, distanceMiles], scope: root }
   );
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!address.trim() || status === "loading") return;
-
-    setStatus("loading");
-    setError(null);
-    setDistanceMiles(null);
-
-    try {
-      const result = await getDistanceFromLaundry(address);
-      setDistanceMiles(result.distanceMiles);
-      setStatus("done");
-    } catch (err) {
-      setStatus("error");
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-    }
-  };
 
   return (
     <section
@@ -128,10 +156,7 @@ export function ConceptPricing() {
           </p>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="glass mt-10 overflow-hidden rounded-[28px]"
-        >
+        <div className="glass mt-10 rounded-[28px]">
           <div className="grid lg:grid-cols-12">
             {/* Controls */}
             <div className="border-b border-white/70 p-6 sm:p-9 lg:col-span-6 lg:border-b-0 lg:border-r lg:p-11">
@@ -253,44 +278,42 @@ export function ConceptPricing() {
                 >
                   4 — Where should we pick up?
                 </label>
-                <div className="relative mt-3">
-                  <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-royal" />
-                  <input
+                <div className="mt-3">
+                  <AddressAutocomplete
                     id="concept-address"
-                    type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Street address, San Diego"
-                    autoComplete="street-address"
-                    className="h-14 w-full rounded-2xl border border-ink/10 bg-white/85 pl-11 pr-4 font-geist text-base text-ink outline-none transition-colors placeholder:text-ink/35 focus:border-royal/60"
+                    onSelect={handleSelect}
+                    onClear={handleClear}
+                    onUnavailable={handleUnavailable}
                   />
                 </div>
-              </div>
 
-              <div className="mt-6">
-                <SlideFillButton
-                  type="submit"
-                  variant="primary"
-                  size="lg"
-                  arrow
-                  disabled={status === "loading" || !address.trim()}
-                  magnetic={false}
-                  className="w-full sm:w-auto"
-                >
-                  {status === "loading" ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Measuring
-                    </>
-                  ) : (
-                    "Calculate my price"
-                  )}
-                </SlideFillButton>
-              </div>
+                {status === "loading" ? (
+                  <p className="mt-3 flex items-center gap-2 text-[0.8125rem] text-royal">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Measuring the drive…
+                  </p>
+                ) : (
+                  <p className="mt-3 text-[0.8125rem] leading-relaxed text-ink/50">
+                    Pick your address from the list and we&rsquo;ll measure the
+                    real driving distance.
+                  </p>
+                )}
 
-              {status === "error" && error && (
-                <p className="mt-4 text-sm font-medium text-ember">{error}</p>
-              )}
+                {status === "error" && error && (
+                  <div className="mt-4 rounded-2xl bg-ember/8 px-4 py-3.5">
+                    <p className="text-[0.875rem] font-medium text-ember">
+                      {error}
+                    </p>
+                    <a
+                      href={BUSINESS.phoneHref}
+                      className="mt-1.5 inline-flex items-center gap-1.5 text-[0.8125rem] font-medium text-ink/70 transition-colors hover:text-royal"
+                    >
+                      <Phone className="h-3.5 w-3.5" />
+                      Call {BUSINESS.phoneDisplay} for a quote
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Live estimate */}
@@ -414,7 +437,27 @@ export function ConceptPricing() {
                 </div>
               </dl>
 
-              {estimate.minimumApplied && (
+              {outOfArea && distanceMiles !== null && (
+                <div className="mt-5 rounded-2xl bg-ember/8 px-4 py-4">
+                  <p className="text-[0.9375rem] font-semibold text-ink">
+                    That address is about {distanceMiles} miles out.
+                  </p>
+                  <p className="mt-1 text-[0.8125rem] leading-relaxed text-ink/65">
+                    We normally quote pickups within{" "}
+                    {MAX_SERVICE_RADIUS_MILES} miles. Give us a call — longer
+                    runs are often still possible, we just price them by hand.
+                  </p>
+                  <a
+                    href={BUSINESS.phoneHref}
+                    className="mt-2.5 inline-flex items-center gap-1.5 text-[0.875rem] font-semibold text-royal transition-colors hover:text-ember"
+                  >
+                    <Phone className="h-3.5 w-3.5" />
+                    Call {BUSINESS.phoneDisplay}
+                  </a>
+                </div>
+              )}
+
+              {estimate.minimumApplied && !outOfArea && (
                 <p className="mt-4 flex items-start gap-2.5 rounded-2xl bg-royal/8 px-4 py-3 text-[0.8125rem] leading-relaxed text-ink/70">
                   <Navigation className="mt-0.5 h-3.5 w-3.5 shrink-0 text-royal" />
                   Billed at our {MIN_ORDER_LBS} lb minimum. If your bag comes in
@@ -424,8 +467,18 @@ export function ConceptPricing() {
 
               <div className="mt-7 flex flex-col gap-3 border-t border-ink/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
                 <p className="max-w-md text-[0.75rem] leading-relaxed text-ink/45">
-                  Distances use a demo estimator, not a live map. Final weight
-                  is measured when we collect. Nothing is charged here.
+                  Delivery is measured as the driving distance to your address.
+                  Final weight is measured when we collect, and nothing is
+                  charged here.{" "}
+                  <a
+                    href="https://www.geoapify.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline decoration-ink/20 underline-offset-2 transition-colors hover:text-ink/70"
+                  >
+                    Address search by Geoapify
+                  </a>
+                  .
                 </p>
                 <a
                   href={BUSINESS.phoneHref}
@@ -436,7 +489,7 @@ export function ConceptPricing() {
               </div>
             </div>
           </div>
-        </form>
+        </div>
       </div>
     </section>
   );

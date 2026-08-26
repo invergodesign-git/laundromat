@@ -16,14 +16,45 @@ check and prerenders every route.
 
 ## Configuration
 
-Two public URLs are read from the environment. Both are optional and both have
-a working fallback, so a missing value degrades gracefully rather than
-breaking a button. See `.env.example`.
+Every variable is optional and every one has a working fallback, so a missing
+value degrades gracefully rather than breaking a feature. See `.env.example`.
+
+Public — compiled into the browser bundle:
 
 | Variable | Controls | Fallback when unset |
 | --- | --- | --- |
 | `NEXT_PUBLIC_BOOKING_URL` | Every "Book now" button | Links to `/pricing` |
 | `NEXT_PUBLIC_REVIEW_URL` | Every "Leave a review" button | Opens an email to the business |
+
+Server only — never sent to the browser:
+
+| Variable | Controls | Fallback when unset |
+| --- | --- | --- |
+| `GEOAPIFY_API_KEY` | Address autocomplete and driving-distance lookup | Calculator asks people to call for a quote |
+| `LAUNDRY_ORIGIN_LAT` / `LAUNDRY_ORIGIN_LON` | Start point of every route | As above |
+| `GEO_SEARCH_RADIUS_MILES` | How far out addresses are suggested | 45 miles |
+
+The pickup coordinates are server-only on purpose: the business does not
+publish its street address, and the browser only ever receives a mile count.
+
+## Distance and pricing
+
+The calculator measures a real driving distance rather than estimating one.
+
+- `src/lib/geo/` is the mapping layer. `types.ts` defines the `GeoProvider`
+  interface; `geoapify.ts` implements it. Switching to Google or Mapbox means
+  adding one module and changing one line in `index.ts` — no route handler and
+  no component needs to change.
+- `src/app/api/address/suggest` and `src/app/api/address/distance` are thin
+  server proxies. They exist so the API key stays on the server, and they add
+  caching and per-IP throttling to protect the free-tier quota.
+- Business rules stay in `src/lib/pricing.ts`. The geo layer answers "how far",
+  and pricing decides what that costs and whether it is inside
+  `MAX_SERVICE_RADIUS_MILES` (25). Beyond that the calculator stops quoting and
+  asks the customer to call.
+
+Geoapify's free plan requires visible attribution, which is rendered under the
+calculator. Keep it if the site stays on the free tier.
 
 ## Where the content lives
 
@@ -39,12 +70,6 @@ updates every page that references them.
 | `src/lib/reviews.ts` | Customer reviews |
 | `src/lib/nav.ts` | Header, mobile sheet and footer navigation |
 | `src/lib/booking.ts` | Where "Book now" points |
-
-`src/lib/distance.ts` is a **demo** distance estimator, not a real geocoder. It
-hashes the entered address into a stable pseudo-distance so the calculator has
-something to work with. Swap the body of `getDistanceFromLaundry` for a real
-provider (Google Distance Matrix, Mapbox) when one is available — the return
-shape is designed to stay the same so no UI has to change.
 
 ## Routes
 
