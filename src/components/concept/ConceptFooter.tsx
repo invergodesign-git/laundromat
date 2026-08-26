@@ -93,7 +93,8 @@ export function ConceptFooter() {
       <div className="border-t border-ink/10">
         <div className="mx-auto flex max-w-[1440px] flex-col gap-2 px-5 py-5 text-[0.75rem] text-ink/45 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
           <p>
-            © {new Date().getFullYear()} {BUSINESS.name}. All rights reserved.
+            © {new Date().getFullYear()} {BUSINESS.legalName}. All rights
+            reserved.
           </p>
           <p>Veteran owned · {BUSINESS.servingArea}</p>
         </div>

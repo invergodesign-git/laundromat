@@ -10,6 +10,8 @@
 export const BUSINESS = {
   name: "California Laundromat",
   shortName: "California Laundromat",
+  /** Registered entity name — used where the legal name is required. */
+  legalName: "California Laundromat, LLC",
   city: "San Diego, CA",
   servingArea: "Mission Valley, San Diego",
   hoursLabel: "Call to confirm hours",
