@@ -25,7 +25,14 @@ import {
 const AUTOCOMPLETE_URL = "https://api.geoapify.com/v1/geocode/autocomplete";
 const ROUTING_URL = "https://api.geoapify.com/v1/routing";
 
-const REQUEST_TIMEOUT_MS = 6_000;
+/**
+ * Generous on purpose. A warm request answers in about two seconds, but the
+ * first call from a cold serverless instance has DNS and TLS to do as well,
+ * and cutting that off produces a spurious "service unavailable" on someone's
+ * very first search. Responsiveness is handled on the client instead, by
+ * debouncing keystrokes and aborting superseded requests.
+ */
+const REQUEST_TIMEOUT_MS = 12_000;
 const SUGGESTION_LIMIT = 5;
 
 interface GeoapifyAutocompleteResult {
