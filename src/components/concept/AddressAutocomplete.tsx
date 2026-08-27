@@ -46,6 +46,8 @@ export function AddressAutocomplete({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  /** True once a lookup has run and come back with nothing to offer. */
+  const [noMatches, setNoMatches] = useState(false);
 
   const wrapper = useRef<HTMLDivElement>(null);
   /** Text of the suggestion currently accepted, so we can detect edits. */
@@ -58,6 +60,7 @@ export function AddressAutocomplete({
 
     if (disabled || trimmed.length < MIN_QUERY_LENGTH) {
       setSuggestions([]);
+      setNoMatches(false);
       setLoading(false);
       return;
     }
@@ -74,11 +77,13 @@ export function AddressAutocomplete({
       try {
         const results = await fetchSuggestions(trimmed, controller.signal);
         setSuggestions(results);
+        setNoMatches(results.length === 0);
         setActiveIndex(-1);
         setOpen(true);
       } catch (error) {
         if (controller.signal.aborted) return;
         setSuggestions([]);
+        setNoMatches(false);
         setOpen(false);
         if (error instanceof GeoError && onUnavailable) {
           onUnavailable(error.message);
@@ -113,6 +118,7 @@ export function AddressAutocomplete({
     selectedText.current = text;
     setQuery(text);
     setSuggestions([]);
+    setNoMatches(false);
     setOpen(false);
     setActiveIndex(-1);
     onSelect(suggestion);
@@ -173,7 +179,7 @@ export function AddressAutocomplete({
           value={query}
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          onFocus={() => suggestions.length > 0 && setOpen(true)}
+          onFocus={() => (suggestions.length > 0 || noMatches) && setOpen(true)}
           placeholder={placeholder}
           disabled={disabled}
           autoComplete="off"
@@ -228,6 +234,20 @@ export function AddressAutocomplete({
           </li>
         ))}
       </ul>
+
+      {/*
+        A lookup that returns nothing used to render as an empty box, which
+        reads as "the site is broken" rather than "that address wasn't found".
+      */}
+      {open && noMatches && !loading && (
+        <p
+          role="status"
+          className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 rounded-2xl border border-ink/10 bg-white px-4 py-3 text-[0.875rem] leading-snug text-ink/60 shadow-[0_24px_48px_-24px_rgba(20,18,41,0.45)]"
+        >
+          No matches. Try the full street name rather than an abbreviation, or
+          give us a call and we&rsquo;ll sort it out.
+        </p>
+      )}
     </div>
   );
 }
