@@ -1,20 +1,20 @@
 /**
  * Booking target.
  *
- * Square online booking will own this action. Until the Square account is
- * connected, every "Book now" in the UI falls back to the pricing page, where
- * a customer can price their order and call. When Square goes live, set
- * `NEXT_PUBLIC_BOOKING_URL` and every button on the site switches over — no
- * component changes required.
+ * By default every "Book now" goes to `/book`, the site's own intake form —
+ * the customer enters their details once and the order arrives complete.
+ *
+ * `NEXT_PUBLIC_BOOKING_URL` overrides this. Set it to a Square booking page
+ * and every button on the site switches over with no component changes, which
+ * keeps the option open without committing to it now.
  */
 
 const configured = process.env.NEXT_PUBLIC_BOOKING_URL?.trim();
 
 export const BOOKING = {
-  /** True once a real Square booking URL is configured. */
-  isLive: Boolean(configured),
-  href: configured || "/pricing",
-  /** External targets need to open in a new tab. */
+  /** True when booking is handled by an external service rather than by us. */
+  isExternal: Boolean(configured),
+  href: configured || "/book",
   target: configured ? "_blank" : undefined,
   rel: configured ? "noopener noreferrer" : undefined,
 } as const;

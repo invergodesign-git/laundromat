@@ -14,18 +14,179 @@ export const BUSINESS = {
   legalName: "California Laundromat, LLC",
   city: "San Diego, CA",
   servingArea: "Mission Valley, San Diego",
-  hoursLabel: "Call to confirm hours",
+  /**
+   * Short line for the header strip and footer. Booking really is always
+   * open, so this is the honest headline — the driver's road hours are in
+   * `HOURS` below and shown wherever there is room for the detail.
+   */
+  hoursLabel: "Book online 24/7",
   // TODO: swap in the real business line before this goes live — this is a
   // clearly-marked placeholder, not a working number.
   phoneDisplay: "(619) 000-0000",
   phoneHref: "tel:+16190000000",
-  email: "hello@californialaundromat.com",
-  emailHref: "mailto:hello@californialaundromat.com",
+  email: "washnow@californialaundromat.com",
+  emailHref: "mailto:washnow@californialaundromat.com",
   /**
    * Where "Leave a review" sends people. Point this at the Google Business
    * review link once the listing is confirmed; until then it is the phone.
    */
   reviewHref: process.env.NEXT_PUBLIC_REVIEW_URL ?? "",
+} as const;
+
+/**
+ * The business runs on Pacific time. Everything date-related is pinned to it
+ * explicitly rather than read from the machine's clock, because the site is
+ * rendered on servers running UTC — without this, a booking made at 9pm on a
+ * Friday in San Diego would be judged against Saturday's schedule.
+ *
+ * Pinning it also means the server and the browser always agree, whatever
+ * timezone the customer happens to be in.
+ */
+export const BUSINESS_TIMEZONE = "America/Los_Angeles";
+
+/** Today's date in the business's timezone, as `YYYY-MM-DD`. */
+export function businessToday(): string {
+  // en-CA formats as YYYY-MM-DD, which sorts correctly as a string.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: BUSINESS_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+/** Minutes since midnight right now, in the business's timezone. */
+export function businessMinutesNow(): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: BUSINESS_TIMEZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+
+  const value = (type: string) =>
+    Number(parts.find((part) => part.type === type)?.value ?? 0);
+
+  // Some runtimes render midnight as hour 24.
+  return (value("hour") % 24) * 60 + value("minute");
+}
+
+/** `YYYY-MM-DD`, `days` after today, in the business's timezone. */
+export function businessDatePlus(days: number): string {
+  const [year, month, day] = businessToday().split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+/** Day of week (0 = Sunday) for a `YYYY-MM-DD` string. */
+export function weekdayOf(isoDate: string): number | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
+  if (!match) return null;
+  const [, year, month, day] = match.map(Number);
+  return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+}
+
+/**
+ * The windows a driver is actually on the road. Weekdays run a day and a
+ * night shift; weekends and holidays run one long shift.
+ *
+ * `weekdays` holds day numbers (0 = Sunday) so the form can offer only the
+ * windows that exist on the chosen date. `endMinutes` lets us drop a window
+ * that has already finished today, rather than accepting a pickup for a slot
+ * the van has already driven.
+ */
+export const PICKUP_WINDOWS = [
+  {
+    id: "weekday-day",
+    label: "9:30 AM – 2:30 PM",
+    weekdays: [1, 2, 3, 4, 5],
+    startMinutes: 9 * 60 + 30,
+    endMinutes: 14 * 60 + 30,
+  },
+  {
+    id: "weekday-night",
+    label: "7:30 PM – 10:30 PM",
+    weekdays: [1, 2, 3, 4, 5],
+    startMinutes: 19 * 60 + 30,
+    endMinutes: 22 * 60 + 30,
+  },
+  {
+    id: "weekend-day",
+    label: "9:30 AM – 7:30 PM",
+    weekdays: [0, 6],
+    startMinutes: 9 * 60 + 30,
+    endMinutes: 19 * 60 + 30,
+  },
+] as const;
+
+export type PickupWindowId = (typeof PICKUP_WINDOWS)[number]["id"];
+export type PickupWindow = (typeof PICKUP_WINDOWS)[number];
+
+export function getPickupWindow(id: string): PickupWindow | null {
+  return PICKUP_WINDOWS.find((window) => window.id === id) ?? null;
+}
+
+/**
+ * Every window the schedule runs on that day, whatever the time. Kept apart
+ * from `pickupWindowsForDate` so a rejection can say which of the two things
+ * went wrong: the wrong day, or too late in the day.
+ */
+export function pickupWindowsOnWeekday(isoDate: string): PickupWindow[] {
+  const day = weekdayOf(isoDate);
+  if (day === null) return [];
+  return PICKUP_WINDOWS.filter((window) =>
+    (window.weekdays as readonly number[]).includes(day)
+  );
+}
+
+/**
+ * Windows that can still be booked on `isoDate`. On today's date, windows
+ * whose end time has already passed are excluded.
+ */
+export function pickupWindowsForDate(isoDate: string): PickupWindow[] {
+  const onThisDay = pickupWindowsOnWeekday(isoDate);
+  if (isoDate !== businessToday()) return onThisDay;
+
+  const now = businessMinutesNow();
+  return onThisDay.filter((window) => window.endMinutes > now);
+}
+
+/**
+ * The soonest date with a window still open. Used as the form's default so
+ * nobody lands on a day they cannot actually book.
+ */
+export function firstBookableDate(): string {
+  for (let offset = 0; offset < 8; offset += 1) {
+    const date = businessDatePlus(offset);
+    if (pickupWindowsForDate(date).length > 0) return date;
+  }
+  return businessToday();
+}
+
+/**
+ * Two different clocks, and customers care about the difference: you can
+ * place an order at any hour, but a van only comes past during the windows
+ * above. Keeping them separate avoids implying a 3am pickup is possible.
+ */
+export const HOURS = {
+  booking: {
+    label: "Booking",
+    value: "24 hours a day, every day",
+    detail:
+      "Order online whenever it suits you, or call and leave us a message any time.",
+  },
+  /** Grouped for display. Same windows as `PICKUP_WINDOWS`, worded for people. */
+  pickup: [
+    {
+      days: "Monday to Friday",
+      windows: ["9:30 AM – 2:30 PM", "7:30 PM – 10:30 PM"],
+    },
+    {
+      days: "Saturday, Sunday & holidays",
+      windows: ["9:30 AM – 7:30 PM"],
+    },
+  ],
 } as const;
 
 /**

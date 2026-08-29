@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { BUSINESS, PROCESS } from "@/lib/business";
 import {
+  DELIVERY_FEE_CAP,
   DELIVERY_RATE_PER_MILE,
   LOWEST_RATE_PER_LB,
   MIN_ORDER_LBS,
@@ -18,9 +19,11 @@ const FAQS = [
     q: "What does it cost?",
     a: `Wash & fold starts at ${formatCurrency(
       LOWEST_RATE_PER_LB
-    )} per pound and the rate rises the faster you need it back. Delivery is a flat ${formatCurrency(
+    )} per pound and the rate rises the faster you need it back. Delivery is ${formatCurrency(
       DELIVERY_RATE_PER_MILE
-    )} per mile, so you can check the number yourself before you book.`,
+    )} per mile and never more than ${formatCurrency(
+      DELIVERY_FEE_CAP
+    )}, so you can check the number yourself before you book.`,
   },
   {
     q: "Is there a minimum order?",

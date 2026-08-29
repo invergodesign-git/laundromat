@@ -24,11 +24,32 @@ export function geoErrorResponse(
 }
 
 /**
+ * True when a request ended because the caller went away rather than because
+ * anything went wrong. The autocomplete field aborts the in-flight lookup on
+ * every keystroke, so this is the single most common way these routes end.
+ */
+function isCallerGone(error: unknown, request?: Request): boolean {
+  if (request?.signal.aborted) return true;
+  const name = (error as { name?: string } | null)?.name;
+  return name === "AbortError" || name === "ResponseAborted";
+}
+
+/**
  * Maps a thrown error onto a response. Anything that is not a `GeoError` is
  * logged and reported as an upstream failure — provider internals and stack
  * traces never reach the browser.
  */
-export function handleGeoError(error: unknown, context: string): Response {
+export function handleGeoError(
+  error: unknown,
+  context: string,
+  request?: Request
+): Response {
+  if (isCallerGone(error, request)) {
+    // Nothing went wrong and nobody is listening. Logging these would bury
+    // real failures under one entry per keystroke.
+    return new Response(null, { status: 499 });
+  }
+
   if (error instanceof GeoError) {
     return geoErrorResponse(error.code, error.message);
   }

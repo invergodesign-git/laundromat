@@ -179,7 +179,7 @@ export const POSTS: readonly Post[] = [
       { type: "h2", text: "We charge by the mile, not by the order" },
       {
         type: "p",
-        text: "Delivery is billed at a flat base rate per mile. That means the cost is tied to something you can check yourself rather than a flat convenience fee that has no relationship to the work involved. If you are close, you pay very little. If you are further out, you pay proportionally more, and you see the number before you book.",
+        text: "Delivery is billed at a base rate per mile. That means the cost is tied to something you can check yourself rather than a flat convenience fee that has no relationship to the work involved. If you are close, you pay very little. If you are further out, the charge stops climbing once it reaches our delivery cap, so the longest run in our service area costs the same as a moderate one. Either way you see the number before you book.",
       },
       { type: "h2", text: "Then count what you are not spending" },
       {

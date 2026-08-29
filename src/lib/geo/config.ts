@@ -10,6 +10,8 @@
  * ever receives a mile count — never the origin itself.
  */
 
+import "server-only";
+
 import { METERS_PER_MILE, type Coordinates } from "./types";
 
 export interface GeoConfig {

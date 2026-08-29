@@ -14,15 +14,28 @@ import { roundToCent } from "./utils";
 /** Orders are billed at a 24 lb minimum, even when the bag weighs less. */
 export const MIN_ORDER_LBS = 24;
 
-/** Delivery is charged per mile travelled. */
+/** Delivery is charged per mile travelled, one way, from the home office. */
 export const DELIVERY_RATE_PER_MILE = 0.77;
 
 /**
- * How far out we quote a delivery price. Beyond this the calculator stops
- * guessing and asks the customer to call, rather than quoting a run the
- * business may not want to make.
+ * Ceiling on the delivery charge, whatever the distance. Set by the owner so
+ * the occasional longer run stays affordable enough that customers still book
+ * it — the extra miles are absorbed as a cost of building the round.
+ *
+ * At the current per-mile rate the cap starts biting at roughly 7.8 miles.
  */
-export const MAX_SERVICE_RADIUS_MILES = 25;
+export const DELIVERY_FEE_CAP = 6.0;
+
+/**
+ * How far out we quote at all. Beyond this the calculator stops pricing and
+ * asks the customer to call, rather than committing the business to a run it
+ * may not want to make.
+ */
+export const MAX_SERVICE_RADIUS_MILES = 18;
+
+/** The distance at which the cap takes over from the per-mile rate. */
+export const DELIVERY_CAP_FROM_MILES =
+  Math.round((DELIVERY_FEE_CAP / DELIVERY_RATE_PER_MILE) * 10) / 10;
 
 export function isWithinServiceArea(distanceMiles: number): boolean {
   return (
@@ -48,15 +61,19 @@ export interface TurnaroundTier {
   summary: string;
   /** Longer description for the services and pricing pages. */
   details: string;
-  /** True for the billed-monthly co-operative plan. */
-  isSubscription?: boolean;
+  /**
+   * True for the billed-monthly co-operative plan. Stated on every tier
+   * rather than left off the others, so the list reads as a table and the
+   * literal ids above survive for callers.
+   */
+  isSubscription: boolean;
 }
 
 /**
  * Wash & fold turnaround options. Ordered fastest → cheapest so the
  * calculator and the price tables always present the same sequence.
  */
-export const TURNAROUND_TIERS: readonly TurnaroundTier[] = [
+export const TURNAROUND_TIERS = [
   {
     id: "express-12hr",
     label: "12 Hour Express",
@@ -64,6 +81,7 @@ export const TURNAROUND_TIERS: readonly TurnaroundTier[] = [
     summary: "Back within 12 hours.",
     details:
       "We pick up your dirty laundry as soon as possible and return it clean and folded within 12 hours. For the days when waiting is not an option.",
+    isSubscription: false,
   },
   {
     id: "1-day",
@@ -72,6 +90,7 @@ export const TURNAROUND_TIERS: readonly TurnaroundTier[] = [
     summary: "Back the next day.",
     details:
       "We pick up your dirty laundry as soon as possible and return it clean and folded in 1 day.",
+    isSubscription: false,
   },
   {
     id: "2-day",
@@ -80,6 +99,7 @@ export const TURNAROUND_TIERS: readonly TurnaroundTier[] = [
     summary: "Back in two days.",
     details:
       "We pick up your dirty laundry as soon as possible and return it clean and folded in 2 days.",
+    isSubscription: false,
   },
   {
     id: "3-day",
@@ -88,6 +108,7 @@ export const TURNAROUND_TIERS: readonly TurnaroundTier[] = [
     summary: "Back in three days.",
     details:
       "We pick up your dirty laundry as soon as possible and return it clean and folded in 3 days. The easiest way to keep the cost down.",
+    isSubscription: false,
   },
   {
     id: "subscription",
@@ -98,9 +119,16 @@ export const TURNAROUND_TIERS: readonly TurnaroundTier[] = [
       "Billed monthly. We pick up every Tuesday and return your laundry clean and folded on Thursday of the same week. Subscribers get coupons and discounts advertised to them each month.",
     isSubscription: true,
   },
-] as const;
+] as const satisfies readonly TurnaroundTier[];
 
-export const DEFAULT_TIER_ID = "2-day";
+/** Union of the real tier ids, so callers cannot invent one. */
+export type TurnaroundTierId = (typeof TURNAROUND_TIERS)[number]["id"];
+
+export const DEFAULT_TIER_ID: TurnaroundTierId = "2-day";
+
+export function isTurnaroundTierId(id: unknown): id is TurnaroundTierId {
+  return TURNAROUND_TIERS.some((tier) => tier.id === id);
+}
 
 export function getTier(id: string): TurnaroundTier {
   return (
@@ -126,7 +154,7 @@ export interface AddOn {
   details: string;
 }
 
-export const ADD_ONS: readonly AddOn[] = [
+export const ADD_ONS = [
   {
     id: "stain-treatment",
     label: "Stain treatment",
@@ -145,7 +173,14 @@ export const ADD_ONS: readonly AddOn[] = [
     details:
       "A light finishing fragrance added to your order. Skip it and your laundry comes back low-scent.",
   },
-] as const;
+] as const satisfies readonly AddOn[];
+
+/** Union of the real add-on ids. */
+export type AddOnId = (typeof ADD_ONS)[number]["id"];
+
+export function isAddOnId(id: unknown): id is AddOnId {
+  return ADD_ONS.some((addOn) => addOn.id === id);
+}
 
 /** Rounds a weight up to the number of billed 24 lb blocks. */
 function blocksOf(weightLbs: number): number {
@@ -162,15 +197,23 @@ export function billableWeight(weightLbs: number): number {
 }
 
 /**
- * Delivery charge for a given distance, at the flat per-mile base rate.
- * Replaces the old distance-banded curve — the business charges by mile.
+ * Delivery charge for a given distance: the per-mile rate, held at
+ * `DELIVERY_FEE_CAP` once the distance would push it past that.
  */
 export function calculateDeliveryFee(
   distanceMiles: number,
   ratePerMile: number = DELIVERY_RATE_PER_MILE
 ): number {
   if (!Number.isFinite(distanceMiles) || distanceMiles <= 0) return 0;
-  return roundToCent(distanceMiles * ratePerMile);
+  return roundToCent(Math.min(distanceMiles * ratePerMile, DELIVERY_FEE_CAP));
+}
+
+/** True when the cap, rather than the mileage, is setting the price. */
+export function isDeliveryCapped(distanceMiles: number): boolean {
+  return (
+    Number.isFinite(distanceMiles) &&
+    distanceMiles * DELIVERY_RATE_PER_MILE > DELIVERY_FEE_CAP
+  );
 }
 
 export function calculateAddOnCost(addOn: AddOn, billableLbs: number): number {

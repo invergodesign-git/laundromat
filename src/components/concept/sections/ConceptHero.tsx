@@ -8,7 +8,11 @@ import { Bubbles } from "@/components/concept/motion/Bubbles";
 import { SlideFill } from "@/components/concept/motion/SlideFill";
 import { DrawSVGPlugin, EASE, gsap, prefersReducedMotion, SplitText } from "@/lib/gsap";
 import { BUSINESS } from "@/lib/business";
-import { DELIVERY_RATE_PER_MILE, LOWEST_RATE_PER_LB } from "@/lib/pricing";
+import {
+  DELIVERY_FEE_CAP,
+  DELIVERY_RATE_PER_MILE,
+  LOWEST_RATE_PER_LB,
+} from "@/lib/pricing";
 import { cn, formatCurrency } from "@/lib/utils";
 
 const TRUST = [
@@ -213,7 +217,7 @@ export function ConceptHero() {
             Leave the bag at your door. It comes back washed, dried and folded
             by hand — from {formatCurrency(LOWEST_RATE_PER_LB)} a pound, with
             delivery priced honestly at {formatCurrency(DELIVERY_RATE_PER_MILE)}{" "}
-            a mile.
+            a mile and never over {formatCurrency(DELIVERY_FEE_CAP)}.
           </p>
 
           <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">

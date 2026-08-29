@@ -7,6 +7,8 @@ import { Highlight, PageHero } from "@/components/site/PageHero";
 import { PageShell } from "@/components/site/PageShell";
 import {
   ADD_ONS,
+  DELIVERY_CAP_FROM_MILES,
+  DELIVERY_FEE_CAP,
   DELIVERY_RATE_PER_MILE,
   LOWEST_RATE_PER_LB,
   MIN_ORDER_LBS,
@@ -21,7 +23,9 @@ export const metadata: Metadata = {
     LOWEST_RATE_PER_LB
   )} per pound with delivery at ${formatCurrency(
     DELIVERY_RATE_PER_MILE
-  )} per mile. Full price list for every service, with no hidden fees.`,
+  )} per mile, capped at ${formatCurrency(
+    DELIVERY_FEE_CAP
+  )}. Full price list for every service, with no hidden fees.`,
 };
 
 export default function PricingPage() {
@@ -41,9 +45,11 @@ export default function PricingPage() {
         }
         lead={`Wash & fold starts at ${formatCurrency(
           LOWEST_RATE_PER_LB
-        )} per pound and delivery is a flat ${formatCurrency(
+        )} per pound and delivery is ${formatCurrency(
           DELIVERY_RATE_PER_MILE
-        )} per mile. Work out your own number below, or scroll for the full list.`}
+        )} per mile — never more than ${formatCurrency(
+          DELIVERY_FEE_CAP
+        )}, however far out you are. Work out your own number below, or scroll for the full list.`}
       >
         <CtaRow bookLabel="Book a pickup" />
       </PageHero>
@@ -66,8 +72,17 @@ export default function PricingPage() {
             </p>
             <p className="mt-5 text-[1.0625rem] leading-relaxed text-ink/70">
               Charged on distance, not on a flat convenience fee. Close by means
-              you pay very little; further out costs proportionally more, and
-              you always see the number before you commit.
+              you pay very little, and you always see the number before you
+              commit.
+            </p>
+            <p className="mt-4 inline-flex items-center rounded-full bg-ember/10 px-4 py-2 font-mono text-[0.75rem] uppercase tracking-[0.1em] text-ember">
+              Capped at {formatCurrency(DELIVERY_FEE_CAP)}
+            </p>
+            <p className="mt-4 text-[1.0625rem] leading-relaxed text-ink/70">
+              Past about {DELIVERY_CAP_FROM_MILES} miles the mileage stops
+              adding up. Delivery never costs more than{" "}
+              {formatCurrency(DELIVERY_FEE_CAP)}, wherever you are in our
+              service area.
             </p>
           </div>
 

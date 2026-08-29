@@ -58,6 +58,6 @@ export async function GET(request: Request) {
     suggestionCache.set(cacheKey, suggestions);
     return Response.json({ suggestions } satisfies SuggestResponse);
   } catch (error) {
-    return handleGeoError(error, "suggest");
+    return handleGeoError(error, "suggest", request);
   }
 }

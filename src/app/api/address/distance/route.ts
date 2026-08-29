@@ -78,6 +78,6 @@ export async function GET(request: Request) {
     distanceCache.set(cacheKey, distanceMiles);
     return Response.json({ distanceMiles } satisfies DistanceResponse);
   } catch (error) {
-    return handleGeoError(error, "distance");
+    return handleGeoError(error, "distance", request);
   }
 }

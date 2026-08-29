@@ -74,7 +74,11 @@ async function fetchJson<T>(
       cache: "no-store",
     });
   } catch (error) {
-    if (signal?.aborted) throw error;
+    // A superseded keystroke aborting its own lookup is normal, not a fault.
+    const name = (error as { name?: string } | null)?.name;
+    if (signal?.aborted || name === "AbortError" || name === "ResponseAborted") {
+      throw error;
+    }
     console.error(`[geo] ${context} request failed`, error);
     throw new GeoError("upstream", "The address service did not respond.");
   }

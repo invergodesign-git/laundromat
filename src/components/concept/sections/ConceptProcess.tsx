@@ -10,7 +10,11 @@ import { MaskLines } from "@/components/concept/motion/MaskLines";
 import { SlideFill } from "@/components/concept/motion/SlideFill";
 import { EASE, gsap, prefersReducedMotion } from "@/lib/gsap";
 import { BUSINESS } from "@/lib/business";
-import { DELIVERY_RATE_PER_MILE, LOWEST_RATE_PER_LB } from "@/lib/pricing";
+import {
+  DELIVERY_FEE_CAP,
+  DELIVERY_RATE_PER_MILE,
+  LOWEST_RATE_PER_LB,
+} from "@/lib/pricing";
 import { formatCurrency } from "@/lib/utils";
 
 const SERVICES = [
@@ -142,7 +146,8 @@ export function ConceptProcess() {
             <span className="font-semibold text-ember">
               {formatCurrency(LOWEST_RATE_PER_LB)} a pound
             </span>
-            , with delivery at {formatCurrency(DELIVERY_RATE_PER_MILE)} a mile.
+            , with delivery at {formatCurrency(DELIVERY_RATE_PER_MILE)} a mile
+            and capped at {formatCurrency(DELIVERY_FEE_CAP)}.
           </p>
         </div>
 

@@ -14,7 +14,9 @@ import {
   ADD_ONS,
   calculateEstimate,
   DEFAULT_TIER_ID,
+  DELIVERY_FEE_CAP,
   DELIVERY_RATE_PER_MILE,
+  isDeliveryCapped,
   isWithinServiceArea,
   LOWEST_RATE_PER_LB,
   MAX_SERVICE_RADIUS_MILES,
@@ -55,6 +57,8 @@ export function ConceptPricing() {
     !isWithinServiceArea(distanceMiles);
   const hasDistance =
     status === "done" && distanceMiles !== null && !outOfArea;
+
+  const capped = hasDistance && isDeliveryCapped(distanceMiles);
 
   const estimate = calculateEstimate({
     weightLbs,
@@ -152,7 +156,8 @@ export function ConceptPricing() {
           </div>
           <p className="max-w-xs font-mono-meta text-ink/45 lg:text-right">
             from {formatCurrency(LOWEST_RATE_PER_LB)} / lb ·{" "}
-            {formatCurrency(DELIVERY_RATE_PER_MILE)} per mile
+            {formatCurrency(DELIVERY_RATE_PER_MILE)} per mile ·{" "}
+            {formatCurrency(DELIVERY_FEE_CAP)} delivery max
           </p>
         </div>
 
@@ -420,11 +425,19 @@ export function ConceptPricing() {
                   <dt className="text-[0.9375rem] text-ink/75">
                     Delivery
                     <span className="mt-0.5 block font-mono text-[0.6875rem] uppercase tracking-[0.1em] text-ink/40">
-                      {hasDistance
-                        ? `${estimate.distanceMiles} mi × ${formatCurrency(
+                      {!hasDistance
+                        ? `${formatCurrency(
                             DELIVERY_RATE_PER_MILE
-                          )}`
-                        : `${formatCurrency(DELIVERY_RATE_PER_MILE)} per mile`}
+                          )} per mile · ${formatCurrency(
+                            DELIVERY_FEE_CAP
+                          )} max`
+                        : capped
+                          ? `${estimate.distanceMiles} mi · capped at ${formatCurrency(
+                              DELIVERY_FEE_CAP
+                            )}`
+                          : `${estimate.distanceMiles} mi × ${formatCurrency(
+                              DELIVERY_RATE_PER_MILE
+                            )}`}
                     </span>
                   </dt>
                   <dd className="tabular shrink-0 font-display text-xl text-ink">
@@ -455,6 +468,15 @@ export function ConceptPricing() {
                     Call {BUSINESS.phoneDisplay}
                   </a>
                 </div>
+              )}
+
+              {capped && (
+                <p className="mt-4 flex items-start gap-2.5 rounded-2xl bg-mint/15 px-4 py-3 text-[0.8125rem] leading-relaxed text-ink/70">
+                  <Navigation className="mt-0.5 h-3.5 w-3.5 shrink-0 text-royal" />
+                  You&rsquo;re far enough out that the mileage would come to more
+                  than {formatCurrency(DELIVERY_FEE_CAP)}. We cap delivery there,
+                  so that&rsquo;s all you pay.
+                </p>
               )}
 
               {estimate.minimumApplied && !outOfArea && (
