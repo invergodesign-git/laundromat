@@ -1,5 +1,6 @@
 /**
- * One-off check: exercises the /api/book intake against a running dev server.
+ * One-off check: exercises the /api/book and /api/waitlist intake against a
+ * running dev server.
  *
  * Usage: node scripts/check-booking.mjs [baseUrl]
  */
@@ -17,8 +18,8 @@ function nextWeekday() {
   return new Date(date.getTime() - offset).toISOString().slice(0, 10);
 }
 
-async function post(label, body) {
-  const response = await fetch(`${BASE}/api/book`, {
+async function post(label, body, path = "/api/book") {
+  const response = await fetch(`${BASE}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -38,8 +39,15 @@ async function findAddress(query) {
   return data.suggestions?.[0] ?? null;
 }
 
+const CUSTOMER = {
+  firstName: "Test",
+  lastName: "Customer",
+  phone: "6195550142",
+  email: "t@example.com",
+};
+
 await post("rejects an empty submission", {
-  contact: { name: "", phone: "123", email: "nope" },
+  contact: { firstName: "", lastName: "", phone: "123", email: "nope" },
   address: { label: "" },
   service: { tierId: "bogus", addOnIds: [], estimatedWeightLbs: 0 },
   pickup: { date: "2020-01-01", windowId: "nope" },
@@ -73,24 +81,34 @@ const isWeekend = [0, 6].includes(
   new Date(`${pacificToday}T00:00:00Z`).getUTCDay()
 );
 await post("checks today's own window against the clock", {
-  contact: { name: "Test Customer", phone: "6195550142", email: "t@example.com" },
+  contact: CUSTOMER,
   address: { ...address, notes: "" },
   service: { tierId: "2-day", addOnIds: [], estimatedWeightLbs: 30 },
   pickup: {
     date: pacificToday,
     windowId: isWeekend ? "weekend-day" : "weekday-day",
   },
+  acceptedCancellationPolicy: true,
 });
 
 await post("rejects a weekend window on a weekday", {
-  contact: { name: "Test Customer", phone: "6195550142", email: "t@example.com" },
+  contact: CUSTOMER,
   address: { ...address, notes: "" },
   service: { tierId: "2-day", addOnIds: [], estimatedWeightLbs: 30 },
   pickup: { date: nextWeekday(), windowId: "weekend-day" },
+  acceptedCancellationPolicy: true,
+});
+
+await post("rejects a booking without the cancellation agreement", {
+  contact: CUSTOMER,
+  address: { ...address, notes: "" },
+  service: { tierId: "2-day", addOnIds: [], estimatedWeightLbs: 30 },
+  pickup: { date: nextWeekday(), windowId: "weekday-day" },
+  acceptedCancellationPolicy: false,
 });
 
 await post("accepts a complete booking", {
-  contact: { name: "Test Customer", phone: "6195550142", email: "t@example.com" },
+  contact: CUSTOMER,
   address: { ...address, notes: "Apt 2, gate code 1234" },
   service: {
     tierId: "2-day",
@@ -99,4 +117,30 @@ await post("accepts a complete booking", {
   },
   pickup: { date: nextWeekday(), windowId: "weekday-day" },
   instructions: "Grey blanket is delicate",
+  acceptedCancellationPolicy: true,
 });
+
+// ---- Out-of-area capture ---------------------------------------------------
+// Coordinates are hard-coded rather than looked up: the suggest route only
+// returns addresses near the home office, which is exactly the case this
+// check needs to fall outside of. Wilshire Blvd, Los Angeles — ~120 miles out.
+await post(
+  "keeps an out-of-area enquiry",
+  {
+    contact: CUSTOMER,
+    address: {
+      label: "Wilshire Blvd",
+      context: "Los Angeles, CA 90010",
+      lat: 34.0619,
+      lon: -118.3005,
+      notes: "",
+    },
+  },
+  "/api/waitlist"
+);
+
+await post(
+  "rejects an out-of-area enquiry with no contact details",
+  { contact: {}, address: { label: "" } },
+  "/api/waitlist"
+);

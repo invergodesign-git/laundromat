@@ -13,6 +13,7 @@ import { AddressAutocomplete } from "@/components/concept/AddressAutocomplete";
 import {
   BUSINESS,
   businessDatePlus,
+  CANCELLATION_POLICY,
   firstBookableDate,
   pickupWindowsForDate,
 } from "@/lib/business";
@@ -46,6 +47,14 @@ interface Success {
   deliveryFee: number;
   distanceMiles: number;
 }
+
+/**
+ * Which of the two things the form is doing. An address beyond the delivery
+ * radius cannot be booked, but the person is still worth keeping in touch
+ * with, so the form becomes a short "tell me when you reach me" instead of a
+ * dead end.
+ */
+type Mode = "booking" | "waitlist";
 
 /**
  * All three are pinned to the shop's timezone, so the server rendering this
@@ -104,7 +113,8 @@ const inputClass =
 export function BookingForm() {
   const bounds = useMemo(dateBounds, []);
 
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
 
@@ -121,11 +131,13 @@ export function BookingForm() {
   const [pickupDate, setPickupDate] = useState(bounds.min);
   const [windowId, setWindowId] = useState("");
   const [instructions, setInstructions] = useState("");
+  const [acceptedPolicy, setAcceptedPolicy] = useState(false);
 
   const [errors, setErrors] = useState<OrderFieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [status, setStatus] = useState<SubmitStatus>("idle");
   const [success, setSuccess] = useState<Success | null>(null);
+  const [joinedWaitlist, setJoinedWaitlist] = useState(false);
 
   const windows = useMemo(() => pickupWindowsForDate(pickupDate), [pickupDate]);
 
@@ -135,6 +147,7 @@ export function BookingForm() {
     !isWithinServiceArea(distanceMiles);
   const hasDistance =
     distanceStatus === "done" && distanceMiles !== null && !outOfArea;
+  const mode: Mode = outOfArea ? "waitlist" : "booking";
 
   const estimate = calculateEstimate({
     weightLbs,
@@ -212,23 +225,33 @@ export function BookingForm() {
     setFormError(null);
     setErrors({});
 
+    const contact = { firstName, lastName, phone, email };
+    const addressPayload = {
+      label: address?.label ?? "",
+      context: address?.context ?? "",
+      lat: address?.lat,
+      lon: address?.lon,
+      notes: addressNotes,
+    };
+
+    const endpoint = mode === "waitlist" ? "/api/waitlist" : "/api/book";
+    const payloadBody =
+      mode === "waitlist"
+        ? { contact, address: addressPayload }
+        : {
+            contact,
+            address: addressPayload,
+            service: { tierId, addOnIds, estimatedWeightLbs: weightLbs },
+            pickup: { date: pickupDate, windowId },
+            instructions,
+            acceptedCancellationPolicy: acceptedPolicy,
+          };
+
     try {
-      const response = await fetch("/api/book", {
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contact: { name, phone, email },
-          address: {
-            label: address?.label ?? "",
-            context: address?.context ?? "",
-            lat: address?.lat,
-            lon: address?.lon,
-            notes: addressNotes,
-          },
-          service: { tierId, addOnIds, estimatedWeightLbs: weightLbs },
-          pickup: { date: pickupDate, windowId },
-          instructions,
-        }),
+        body: JSON.stringify(payloadBody),
       });
 
       const payload = await response.json().catch(() => ({}));
@@ -236,13 +259,17 @@ export function BookingForm() {
       if (!response.ok) {
         setErrors(payload.fields ?? {});
         setFormError(
-          payload.error ?? "We could not submit that booking. Please try again."
+          payload.error ?? "We could not submit that. Please try again."
         );
         setStatus("idle");
         return;
       }
 
-      setSuccess(payload as Success);
+      if (mode === "waitlist") {
+        setJoinedWaitlist(true);
+      } else {
+        setSuccess(payload as Success);
+      }
       setStatus("done");
     } catch {
       setFormError(
@@ -253,6 +280,45 @@ export function BookingForm() {
   }
 
   // ---- Confirmation --------------------------------------------------------
+  if (status === "done" && joinedWaitlist) {
+    return (
+      <div className="glass mx-auto max-w-2xl rounded-[32px] p-9 text-center sm:p-12">
+        <span className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-aqua text-ink">
+          <Check className="h-8 w-8" strokeWidth={2.2} />
+        </span>
+        <h2 className="mt-7 font-display text-[clamp(2rem,5vw,3rem)] leading-[1.05] tracking-tight text-ink">
+          We&rsquo;ve got you on the list.
+        </h2>
+        <p className="mt-4 text-[1.0625rem] leading-relaxed text-ink/70">
+          You&rsquo;re a little further out than we currently drive, so we
+          can&rsquo;t book a pickup yet. We&rsquo;ll email{" "}
+          <span className="font-semibold text-ink">{email}</span> the moment we
+          reach your area.
+        </p>
+        <p className="mt-4 text-[0.9375rem] leading-relaxed text-ink/60">
+          If it&rsquo;s urgent, give us a call — longer runs are sometimes
+          possible, we just price them by hand.
+        </p>
+
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <a
+            href={BUSINESS.phoneHref}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-ember px-7 py-3.5 font-semibold text-white transition-transform hover:-translate-y-0.5"
+          >
+            <Phone className="h-4 w-4" />
+            {BUSINESS.phoneDisplay}
+          </a>
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 font-semibold text-ink ring-2 ring-inset ring-ink/10 transition-transform hover:-translate-y-0.5"
+          >
+            Back to the site
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (status === "done" && success) {
     return (
       <div className="glass mx-auto max-w-2xl rounded-[32px] p-9 text-center sm:p-12">
@@ -355,21 +421,21 @@ export function BookingForm() {
             )}
 
             {outOfArea && distanceMiles !== null && (
-              <div className="rounded-2xl bg-ember/8 px-4 py-4">
+              <div className="rounded-2xl bg-aqua/15 px-4 py-4">
                 <p className="text-[0.9375rem] font-semibold text-ink">
                   That address is about {distanceMiles} miles out.
                 </p>
-                <p className="mt-1 text-[0.8125rem] leading-relaxed text-ink/65">
-                  We book pickups within {MAX_SERVICE_RADIUS_MILES} miles. Give
-                  us a call — longer runs are often still possible, we just
-                  price them by hand.
+                <p className="mt-1 text-[0.8125rem] leading-relaxed text-ink/70">
+                  We book pickups within {MAX_SERVICE_RADIUS_MILES} miles, so we
+                  can&rsquo;t quote you yet. Leave your name and contact details
+                  below and we&rsquo;ll tell you the moment we reach your area.
                 </p>
                 <a
                   href={BUSINESS.phoneHref}
                   className="mt-2.5 inline-flex items-center gap-1.5 text-[0.875rem] font-semibold text-royal hover:text-ember"
                 >
                   <Phone className="h-3.5 w-3.5" />
-                  Call {BUSINESS.phoneDisplay}
+                  Or call {BUSINESS.phoneDisplay}
                 </a>
               </div>
             )}
@@ -397,13 +463,19 @@ export function BookingForm() {
           </div>
         </fieldset>
 
-        {/* When */}
+        {/* When — irrelevant until we know we can actually drive there. */}
+        {mode === "booking" && (
         <fieldset className="glass rounded-[28px] p-7 sm:p-9">
           <legend className="px-2 font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-royal">
             When
           </legend>
 
-          <div className="mt-4 grid gap-5 sm:grid-cols-2">
+          {/*
+            Stacked rather than side by side. The browser's own date picker
+            drops down and to the right, which put it straight on top of the
+            window buttons when these shared a row.
+          */}
+          <div className="mt-4 grid gap-6">
             <Field
               label="Pickup day"
               htmlFor="booking-date"
@@ -416,7 +488,7 @@ export function BookingForm() {
                 min={bounds.min}
                 max={bounds.max}
                 onChange={(e) => handleDateChange(e.target.value)}
-                className={inputClass}
+                className={cn(inputClass, "sm:max-w-xs")}
               />
             </Field>
 
@@ -429,7 +501,7 @@ export function BookingForm() {
                   : undefined
               }
             >
-              <div className="grid gap-2">
+              <div className="grid gap-2.5 sm:grid-cols-2">
                 {windows.map((window) => (
                   <button
                     key={window.id}
@@ -449,12 +521,19 @@ export function BookingForm() {
                     {window.label}
                   </button>
                 ))}
+                {windows.length === 0 && (
+                  <p className="text-[0.875rem] leading-relaxed text-ink/55">
+                    No windows left on that day. Try the next one.
+                  </p>
+                )}
               </div>
             </Field>
           </div>
         </fieldset>
+        )}
 
         {/* What */}
+        {mode === "booking" && (
         <fieldset className="glass rounded-[28px] p-7 sm:p-9">
           <legend className="px-2 font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-royal">
             What you need
@@ -572,6 +651,7 @@ export function BookingForm() {
             </Field>
           </div>
         </fieldset>
+        )}
 
         {/* Who */}
         <fieldset className="glass rounded-[28px] p-7 sm:p-9">
@@ -580,19 +660,43 @@ export function BookingForm() {
           </legend>
 
           <div className="mt-4 grid gap-5">
-            <Field label="Name" htmlFor="booking-name" error={errors["contact.name"]}>
-              <input
-                id="booking-name"
-                type="text"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  clearError("contact.name");
-                }}
-                autoComplete="name"
-                className={inputClass}
-              />
-            </Field>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field
+                label="First name"
+                htmlFor="booking-first-name"
+                error={errors["contact.firstName"]}
+              >
+                <input
+                  id="booking-first-name"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => {
+                    setFirstName(e.target.value);
+                    clearError("contact.firstName");
+                  }}
+                  autoComplete="given-name"
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field
+                label="Last name"
+                htmlFor="booking-last-name"
+                error={errors["contact.lastName"]}
+              >
+                <input
+                  id="booking-last-name"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => {
+                    setLastName(e.target.value);
+                    clearError("contact.lastName");
+                  }}
+                  autoComplete="family-name"
+                  className={inputClass}
+                />
+              </Field>
+            </div>
 
             <div className="grid gap-5 sm:grid-cols-2">
               <Field
@@ -635,16 +739,95 @@ export function BookingForm() {
             </div>
           </div>
         </fieldset>
+
+        {/* Cancellation terms */}
+        {mode === "booking" && (
+          <fieldset className="glass rounded-[28px] p-7 sm:p-9">
+            <legend className="px-2 font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-royal">
+              Before you book
+            </legend>
+
+            <p className="mt-4 text-[1.0625rem] font-semibold tracking-tight text-ink">
+              {CANCELLATION_POLICY.headline}
+            </p>
+            <ul className="mt-3 grid gap-2">
+              {CANCELLATION_POLICY.terms.map((term) => (
+                <li
+                  key={term}
+                  className="flex items-start gap-2.5 text-[0.9375rem] leading-relaxed text-ink/70"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-royal"
+                  />
+                  {term}
+                </li>
+              ))}
+            </ul>
+
+            <label
+              htmlFor="booking-policy"
+              className={cn(
+                "mt-6 flex cursor-pointer items-start gap-3 rounded-2xl px-4 py-4 transition-colors",
+                acceptedPolicy
+                  ? "bg-mint/25"
+                  : "bg-white/85 ring-1 ring-inset ring-ink/10"
+              )}
+            >
+              <input
+                id="booking-policy"
+                type="checkbox"
+                checked={acceptedPolicy}
+                onChange={(e) => {
+                  setAcceptedPolicy(e.target.checked);
+                  clearError("acceptedCancellationPolicy");
+                }}
+                className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-royal"
+              />
+              <span className="text-[0.9375rem] leading-relaxed text-ink/80">
+                {CANCELLATION_POLICY.agreement}
+              </span>
+            </label>
+
+            {errors["acceptedCancellationPolicy"] && (
+              <p
+                role="alert"
+                className="mt-2 flex items-start gap-1.5 text-[0.8125rem] text-ember"
+              >
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                {errors["acceptedCancellationPolicy"]}
+              </p>
+            )}
+          </fieldset>
+        )}
       </div>
 
       {/* Running estimate */}
       <div className="lg:col-span-5">
         <div className="glass sticky top-28 rounded-[28px] p-7 sm:p-9">
           <p className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-royal">
-            Your estimate
+            {mode === "waitlist" ? "Not yet in range" : "Your estimate"}
           </p>
 
-          <dl className="mt-5 divide-y divide-ink/10">
+          {mode === "waitlist" && (
+            <>
+              <p className="mt-5 text-[1.0625rem] leading-relaxed text-ink/75">
+                We can&rsquo;t price a pickup {distanceMiles} miles out just
+                yet. Leave your details and we&rsquo;ll be in touch the moment
+                that changes.
+              </p>
+              <p className="mt-3 text-[0.9375rem] leading-relaxed text-ink/55">
+                We only use them to tell you when we reach your area.
+              </p>
+            </>
+          )}
+
+          <dl
+            className={cn(
+              "mt-5 divide-y divide-ink/10",
+              mode === "waitlist" && "hidden"
+            )}
+          >
             {estimate.lines.map((line) => (
               <div
                 key={line.id}
@@ -686,16 +869,18 @@ export function BookingForm() {
             </div>
           </dl>
 
-          <div className="mt-4 flex items-baseline justify-between gap-4 border-t-2 border-ink pt-5">
-            <span className="text-[1.0625rem] font-semibold text-ink">
-              Estimated total
-            </span>
-            <span className="tabular font-display text-[2rem] leading-none tracking-tight text-ink">
-              {formatCurrency(estimate.total)}
-            </span>
-          </div>
+          {mode === "booking" && (
+            <div className="mt-4 flex items-baseline justify-between gap-4 border-t-2 border-ink pt-5">
+              <span className="text-[1.0625rem] font-semibold text-ink">
+                Estimated total
+              </span>
+              <span className="tabular font-display text-[2rem] leading-none tracking-tight text-ink">
+                {formatCurrency(estimate.total)}
+              </span>
+            </div>
+          )}
 
-          {estimate.minimumApplied && (
+          {mode === "booking" && estimate.minimumApplied && (
             <p className="mt-4 flex items-start gap-2.5 rounded-2xl bg-royal/8 px-4 py-3 text-[0.8125rem] leading-relaxed text-ink/70">
               <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-royal" />
               Billed at our {MIN_ORDER_LBS} lb minimum. If your bag comes in
@@ -715,24 +900,31 @@ export function BookingForm() {
 
           <button
             type="submit"
-            disabled={status === "submitting" || outOfArea}
-            className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-ember font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-50"
+            disabled={status === "submitting"}
+            className={cn(
+              "mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-full font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-50",
+              mode === "waitlist" ? "bg-royal" : "bg-ember"
+            )}
           >
             {status === "submitting" ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Sending&hellip;
               </>
+            ) : mode === "waitlist" ? (
+              "Tell me when you reach me"
             ) : (
               "Book this pickup"
             )}
           </button>
 
-          <p className="mt-4 text-[0.75rem] leading-relaxed text-ink/45">
-            No payment is taken now. We weigh your bag at pickup and that weight
-            is what you pay for — this is an estimate based on the weight you
-            gave us.
-          </p>
+          {mode === "booking" && (
+            <p className="mt-4 text-[0.75rem] leading-relaxed text-ink/45">
+              No payment is taken now. We weigh your bag at pickup and that
+              weight is what you pay for — this is an estimate based on the
+              weight you gave us.
+            </p>
+          )}
         </div>
       </div>
     </form>

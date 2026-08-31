@@ -190,6 +190,33 @@ export const HOURS = {
 } as const;
 
 /**
+ * How long before a window starts that a booking can still be cancelled for
+ * free. Past this the driver is being routed, so the run is already a cost.
+ *
+ * TODO: confirm this figure with the owner — it is a policy decision, not a
+ * technical one, and it is deliberately in one place so it is a one-line
+ * change once settled.
+ */
+export const FREE_CANCELLATION_HOURS = 2;
+
+/**
+ * The cancellation terms a customer agrees to when booking. Worded to be
+ * firm about the charge but clear that it comes back if they rebook — the
+ * point is to stop no-shows, not to punish people.
+ */
+export const CANCELLATION_POLICY = {
+  headline: `Free to cancel up to ${FREE_CANCELLATION_HOURS} hours before your window.`,
+  terms: [
+    `Cancel more than ${FREE_CANCELLATION_HOURS} hours before your pickup window starts and there is no charge at all.`,
+    "After that the driver is already being routed to you, so a late cancellation is charged.",
+    "If we arrive and there is no laundry to collect, that counts as a late cancellation.",
+    "Any late cancellation charge is credited back against your next order when you rebook.",
+  ],
+  /** Shown next to the acknowledgement control at booking. */
+  agreement: `I understand that cancelling within ${FREE_CANCELLATION_HOURS} hours of my pickup window, or not having laundry ready when the driver arrives, may be charged — and that the charge is credited back when I rebook.`,
+} as const;
+
+/**
  * The owner's service promise, supplied verbatim by the business. Displayed
  * as a commitment, so the wording is not paraphrased anywhere in the UI.
  */

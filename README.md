@@ -103,10 +103,21 @@ details — so nothing has to be repeated on a phone call afterwards.
 - No payment is taken at booking. The price depends on weight, which is not
   known until the bag is collected, so the site quotes an estimate and the
   business charges the real weight afterwards.
+- Booking requires ticking the cancellation agreement. The terms and the
+  free-cancellation cutoff are in `CANCELLATION_POLICY` in
+  `src/lib/business.ts`; the acceptance is recorded on the order.
 
 Pickup windows and the business timezone live in `src/lib/business.ts`. All
 date logic is pinned to `America/Los_Angeles`, so a server running UTC still
 judges "today" the way the shop does.
+
+### Out-of-area enquiries
+
+An address beyond `MAX_SERVICE_RADIUS_MILES` cannot be booked, but the form
+does not dead-end. It drops the timing and service questions, keeps the name,
+contact and address, and posts to `src/app/api/waitlist` instead — which
+re-measures the distance server-side and emails the lead separately from real
+orders, so a pickup that needs driving to is never buried among enquiries.
 
 Set `NEXT_PUBLIC_BOOKING_URL` to hand booking over to Square instead; every
 "Book now" button switches automatically.

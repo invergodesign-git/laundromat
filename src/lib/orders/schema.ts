@@ -21,7 +21,11 @@ import {
   isWithinServiceArea,
   MAX_SERVICE_RADIUS_MILES,
 } from "@/lib/pricing";
-import type { OrderFieldErrors, OrderRequest } from "./types";
+import type {
+  OrderFieldErrors,
+  OrderRequest,
+  WaitlistRequest,
+} from "./types";
 
 /** Longest a customer could plausibly plan ahead. */
 const MAX_DAYS_AHEAD = 30;
@@ -29,7 +33,7 @@ const MAX_DAYS_AHEAD = 30;
 const MAX_WEIGHT_LBS = 400;
 
 const MAX_LENGTHS = {
-  name: 80,
+  name: 60,
   phone: 32,
   email: 160,
   addressLabel: 200,
@@ -78,20 +82,27 @@ export interface ValidationResult {
   value?: OrderRequest;
 }
 
-export function validateOrderRequest(input: unknown): ValidationResult {
-  const errors: OrderFieldErrors = {};
-  const body = (input ?? {}) as Record<string, unknown>;
-
+/**
+ * Contact and address are validated on their own because the waitlist needs
+ * exactly these two and nothing else — someone outside the area has no
+ * pickup window or service tier to give us.
+ */
+function validateContactAndAddress(
+  body: Record<string, unknown>,
+  errors: OrderFieldErrors
+) {
   const contact = (body.contact ?? {}) as Record<string, unknown>;
   const address = (body.address ?? {}) as Record<string, unknown>;
-  const service = (body.service ?? {}) as Record<string, unknown>;
-  const pickup = (body.pickup ?? {}) as Record<string, unknown>;
 
-  // ---- Contact -----------------------------------------------------------
-  const name = text(contact.name);
-  if (!name) errors["contact.name"] = "Tell us who to ask for.";
-  else if (name.length > MAX_LENGTHS.name)
-    errors["contact.name"] = "That name is too long.";
+  const firstName = text(contact.firstName);
+  if (!firstName) errors["contact.firstName"] = "We need a first name.";
+  else if (firstName.length > MAX_LENGTHS.name)
+    errors["contact.firstName"] = "That name is too long.";
+
+  const lastName = text(contact.lastName);
+  if (!lastName) errors["contact.lastName"] = "We need a last name.";
+  else if (lastName.length > MAX_LENGTHS.name)
+    errors["contact.lastName"] = "That name is too long.";
 
   const phone = text(contact.phone);
   const phoneDigits = digitsOf(phone);
@@ -106,7 +117,6 @@ export function validateOrderRequest(input: unknown): ValidationResult {
   else if (!EMAIL_PATTERN.test(email) || email.length > MAX_LENGTHS.email)
     errors["contact.email"] = "Check that email address.";
 
-  // ---- Address -----------------------------------------------------------
   const label = text(address.label);
   const lat = Number(address.lat);
   const lon = Number(address.lon);
@@ -126,6 +136,44 @@ export function validateOrderRequest(input: unknown): ValidationResult {
   } else if (label.length > MAX_LENGTHS.addressLabel) {
     errors["address.label"] = "That address is too long.";
   }
+
+  return {
+    contact: { firstName, lastName, phone, email },
+    address: {
+      label,
+      context: text(address.context).slice(0, MAX_LENGTHS.addressContext),
+      lat,
+      lon,
+      notes: text(address.notes).slice(0, MAX_LENGTHS.addressNotes),
+    },
+  };
+}
+
+export interface WaitlistValidationResult {
+  ok: boolean;
+  errors: OrderFieldErrors;
+  value?: WaitlistRequest;
+}
+
+export function validateWaitlistRequest(
+  input: unknown
+): WaitlistValidationResult {
+  const errors: OrderFieldErrors = {};
+  const body = (input ?? {}) as Record<string, unknown>;
+  const value = validateContactAndAddress(body, errors);
+
+  if (Object.keys(errors).length > 0) return { ok: false, errors };
+  return { ok: true, errors, value };
+}
+
+export function validateOrderRequest(input: unknown): ValidationResult {
+  const errors: OrderFieldErrors = {};
+  const body = (input ?? {}) as Record<string, unknown>;
+
+  const { contact, address } = validateContactAndAddress(body, errors);
+
+  const service = (body.service ?? {}) as Record<string, unknown>;
+  const pickup = (body.pickup ?? {}) as Record<string, unknown>;
 
   // ---- Service -----------------------------------------------------------
   const tierId = text(service.tierId);
@@ -177,20 +225,21 @@ export function validateOrderRequest(input: unknown): ValidationResult {
     }
   }
 
+  // ---- Terms -------------------------------------------------------------
+  const acceptedCancellationPolicy = body.acceptedCancellationPolicy === true;
+  if (!acceptedCancellationPolicy) {
+    errors["acceptedCancellationPolicy"] =
+      "Please confirm you have read the cancellation policy.";
+  }
+
   if (Object.keys(errors).length > 0) return { ok: false, errors };
 
   return {
     ok: true,
     errors,
     value: {
-      contact: { name, phone, email },
-      address: {
-        label,
-        context: text(address.context).slice(0, MAX_LENGTHS.addressContext),
-        lat,
-        lon,
-        notes: text(address.notes).slice(0, MAX_LENGTHS.addressNotes),
-      },
+      contact,
+      address,
       service: {
         tierId: tierId as OrderRequest["service"]["tierId"],
         addOnIds,
@@ -201,6 +250,7 @@ export function validateOrderRequest(input: unknown): ValidationResult {
         windowId: windowId as PickupWindowId,
       },
       instructions: text(body.instructions).slice(0, MAX_LENGTHS.instructions),
+      acceptedCancellationPolicy,
     },
   };
 }
@@ -211,5 +261,5 @@ export function validateOrderRequest(input: unknown): ValidationResult {
  */
 export function serviceAreaError(distanceMiles: number): string | null {
   if (isWithinServiceArea(distanceMiles)) return null;
-  return `That address is about ${distanceMiles} miles out, and we quote pickups within ${MAX_SERVICE_RADIUS_MILES} miles. Give us a call — longer runs are often still possible, we just price them by hand.`;
+  return `That address is about ${distanceMiles} miles out, and we book pickups within ${MAX_SERVICE_RADIUS_MILES} miles. Leave your details and we will let you know as soon as we reach you — or give us a call, since longer runs are sometimes still possible.`;
 }

@@ -7,10 +7,18 @@
  * phone the customer back for a detail we already asked for.
  */
 
-import { BUSINESS, getPickupWindow } from "@/lib/business";
+import {
+  BUSINESS,
+  CANCELLATION_POLICY,
+  getPickupWindow,
+} from "@/lib/business";
 import { ADD_ONS, getTier, MIN_ORDER_LBS } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/utils";
-import type { Order } from "./types";
+import type { Order, WaitlistEntry } from "./types";
+
+function fullName(contact: { firstName: string; lastName: string }): string {
+  return `${contact.firstName} ${contact.lastName}`.trim();
+}
 
 /**
  * Formats `YYYY-MM-DD` for a person. Parsed and rendered in UTC so the date
@@ -88,7 +96,7 @@ export function renderBusinessEmail(order: Order): {
     "",
     "CUSTOMER",
     rows([
-      ["Name", order.contact.name],
+      ["Name", fullName(order.contact)],
       ["Phone", order.contact.phone],
       ["Email", order.contact.email],
     ]),
@@ -138,7 +146,9 @@ export function renderBusinessEmail(order: Order): {
   <p style="font-size:14px;color:#666;margin:0">${order.distanceMiles} miles from the home office</p>
 
   <h2 style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#666;border-bottom:1px solid #e5e5e5;padding-bottom:6px;margin-top:28px">Customer</h2>
-  <p style="font-size:16px;margin:12px 0 0">${escapeHtml(order.contact.name)}</p>
+  <p style="font-size:16px;margin:12px 0 0">${escapeHtml(
+    fullName(order.contact)
+  )}</p>
   <p style="font-size:16px;margin:4px 0 0"><a href="tel:${escapeHtml(
     order.contact.phone
   )}">${escapeHtml(order.contact.phone)}</a></p>
@@ -197,7 +207,7 @@ export function renderCustomerEmail(order: Order): {
   const subject = `We've got your pickup — ${order.reference}`;
 
   const text = [
-    `Hi ${order.contact.name},`,
+    `Hi ${order.contact.firstName},`,
     "",
     `We have your pickup booked. Your reference is ${order.reference}.`,
     "",
@@ -221,6 +231,9 @@ export function renderCustomerEmail(order: Order): {
       ? `Heads up: orders are billed at a ${MIN_ORDER_LBS} lb minimum. If your bag comes in lighter, we may credit the difference against your next order.`
       : "",
     "",
+    "IF YOU NEED TO CANCEL",
+    CANCELLATION_POLICY.terms.map((term) => `- ${term}`).join("\n"),
+    "",
     `Need to change something? Call us on ${BUSINESS.phoneDisplay} or reply to this email and quote ${order.reference}.`,
     "",
     BUSINESS.name,
@@ -231,7 +244,7 @@ export function renderCustomerEmail(order: Order): {
   const html = `
 <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;color:#1a1a1a">
   <p style="font-size:17px;margin:0 0 16px">Hi ${escapeHtml(
-    order.contact.name
+    order.contact.firstName
   )},</p>
   <p style="font-size:17px;line-height:1.6;margin:0 0 24px">We have your pickup booked. Your reference is <strong>${escapeHtml(
     order.reference
@@ -270,6 +283,18 @@ export function renderCustomerEmail(order: Order): {
       : ""
   }
 
+  <div style="background:#f4f7f9;border-radius:16px;padding:18px 22px;margin-top:24px">
+    <p style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#666;margin:0 0 8px">If you need to cancel</p>
+    <p style="font-size:15px;font-weight:600;margin:0 0 8px">${escapeHtml(
+      CANCELLATION_POLICY.headline
+    )}</p>
+    <ul style="font-size:14px;line-height:1.6;color:#555;margin:0;padding-left:18px">
+      ${CANCELLATION_POLICY.terms
+        .map((term) => `<li>${escapeHtml(term)}</li>`)
+        .join("")}
+    </ul>
+  </div>
+
   <p style="font-size:15px;line-height:1.6;color:#555;margin:24px 0 0">
     Need to change something? Call <a href="${escapeHtml(
       BUSINESS.phoneHref
@@ -278,6 +303,101 @@ export function renderCustomerEmail(order: Order): {
     )}</a> or reply to this email and quote ${escapeHtml(order.reference)}.
   </p>
   <p style="font-size:15px;margin:20px 0 0">${escapeHtml(BUSINESS.name)}</p>
+</div>`.trim();
+
+  return { subject, text, html };
+}
+
+// ---------------------------------------------------------------------------
+// Out-of-area enquiry
+// ---------------------------------------------------------------------------
+
+/**
+ * Someone the business cannot serve yet. Sent as its own email rather than
+ * mixed in with real orders, so a full inbox never buries a job that needs
+ * driving to — and so the list is easy to pull out later for marketing.
+ */
+export function renderWaitlistEmail(entry: WaitlistEntry): {
+  subject: string;
+  text: string;
+  html: string;
+} {
+  const address = [entry.address.label, entry.address.context]
+    .filter(Boolean)
+    .join(", ");
+  const subject = `Outside the area — ${address}`;
+
+  const text = [
+    "OUT-OF-AREA ENQUIRY",
+    "",
+    "This is not a booking. Nobody is expecting a pickup.",
+    "",
+    rows([
+      ["Name", fullName(entry.contact)],
+      ["Phone", entry.contact.phone],
+      ["Email", entry.contact.email],
+      ["Address", address],
+      ["Distance", `${entry.distanceMiles} miles from the home office`],
+    ]),
+    "",
+    `Received ${new Date(entry.receivedAt).toLocaleString("en-US")}`,
+  ].join("\n");
+
+  const html = `
+<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:640px;color:#1a1a1a">
+  <p style="font:600 12px/1 monospace;letter-spacing:.1em;text-transform:uppercase;color:#666;margin:0 0 4px">Out-of-area enquiry</p>
+  <h1 style="font-size:24px;margin:0 0 8px">${escapeHtml(address)}</h1>
+  <p style="font-size:15px;color:#666;margin:0 0 24px">${
+    entry.distanceMiles
+  } miles out. This is not a booking — nobody is expecting a pickup.</p>
+
+  <p style="font-size:16px;margin:0">${escapeHtml(fullName(entry.contact))}</p>
+  <p style="font-size:16px;margin:4px 0 0"><a href="tel:${escapeHtml(
+    entry.contact.phone
+  )}">${escapeHtml(entry.contact.phone)}</a></p>
+  <p style="font-size:16px;margin:4px 0 0"><a href="mailto:${escapeHtml(
+    entry.contact.email
+  )}">${escapeHtml(entry.contact.email)}</a></p>
+</div>`.trim();
+
+  return { subject, text, html };
+}
+
+/** Confirmation to the person who is outside the area. */
+export function renderWaitlistCustomerEmail(entry: WaitlistEntry): {
+  subject: string;
+  text: string;
+  html: string;
+} {
+  const subject = "Thanks — we'll let you know";
+
+  const text = [
+    `Hi ${entry.contact.firstName},`,
+    "",
+    `Thanks for getting in touch. Your address is about ${entry.distanceMiles} miles from us, which is a bit further than we currently drive, so we cannot book you a pickup just yet.`,
+    "",
+    "We have kept your details and will let you know as soon as we cover your area.",
+    "",
+    `If it is urgent, do call us on ${BUSINESS.phoneDisplay} — longer runs are sometimes possible, we just price them by hand.`,
+    "",
+    BUSINESS.name,
+  ].join("\n");
+
+  const html = `
+<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;color:#1a1a1a">
+  <p style="font-size:17px;margin:0 0 16px">Hi ${escapeHtml(
+    entry.contact.firstName
+  )},</p>
+  <p style="font-size:17px;line-height:1.6;margin:0 0 16px">Thanks for getting in touch. Your address is about ${
+    entry.distanceMiles
+  } miles from us, which is a bit further than we currently drive, so we cannot book you a pickup just yet.</p>
+  <p style="font-size:17px;line-height:1.6;margin:0 0 16px">We have kept your details and will let you know as soon as we cover your area.</p>
+  <p style="font-size:15px;line-height:1.6;color:#555;margin:0 0 20px">If it is urgent, do call us on <a href="${escapeHtml(
+    BUSINESS.phoneHref
+  )}">${escapeHtml(
+    BUSINESS.phoneDisplay
+  )}</a> — longer runs are sometimes possible, we just price them by hand.</p>
+  <p style="font-size:15px;margin:0">${escapeHtml(BUSINESS.name)}</p>
 </div>`.trim();
 
   return { subject, text, html };

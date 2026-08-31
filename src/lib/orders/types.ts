@@ -11,8 +11,14 @@
 import type { PickupWindowId } from "@/lib/business";
 import type { AddOnId, TurnaroundTierId } from "@/lib/pricing";
 
+/**
+ * First and last are kept apart rather than as one "name" field so the
+ * business has usable records — you can greet someone by first name and sort
+ * or search by last without unpicking a single string later.
+ */
 export interface OrderContact {
-  name: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   email: string;
 }
@@ -52,6 +58,12 @@ export interface OrderRequest {
   pickup: OrderPickup;
   /** Anything else the customer wants us to know about the load. */
   instructions: string;
+  /**
+   * Explicit agreement to the cancellation terms. Recorded on the order so
+   * there is a record of what the customer accepted, which is the whole
+   * point of asking.
+   */
+  acceptedCancellationPolicy: boolean;
 }
 
 /**
@@ -69,6 +81,21 @@ export interface Order extends OrderRequest {
   laundryTotal: number;
   addOnTotal: number;
   total: number;
+}
+
+/**
+ * Someone whose address is outside the delivery radius. They are not turned
+ * away with nothing — their details are kept so the business can tell them
+ * when the service reaches their area.
+ */
+export interface WaitlistRequest {
+  contact: OrderContact;
+  address: OrderAddress;
+}
+
+export interface WaitlistEntry extends WaitlistRequest {
+  receivedAt: string;
+  distanceMiles: number;
 }
 
 export interface OrderFieldErrors {
