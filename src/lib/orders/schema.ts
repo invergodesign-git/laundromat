@@ -232,6 +232,34 @@ export function validateOrderRequest(input: unknown): ValidationResult {
       "Please confirm you have read the cancellation policy.";
   }
 
+  // ---- Payment (optional at schema level; /api/book requires it when Stripe is on)
+  const paymentBody = (body.payment ?? null) as Record<string, unknown> | null;
+  let payment: OrderRequest["payment"] | undefined;
+  if (paymentBody) {
+    const customerId = text(paymentBody.customerId);
+    const paymentMethodId = text(paymentBody.paymentMethodId);
+    const setupIntentId = text(paymentBody.setupIntentId);
+    if (
+      !customerId.startsWith("cus_") ||
+      !paymentMethodId.startsWith("pm_") ||
+      !setupIntentId.startsWith("seti_")
+    ) {
+      errors["payment"] = "Card details are incomplete. Please try the card again.";
+    } else {
+      payment = { customerId, paymentMethodId, setupIntentId };
+    }
+  }
+
+  const checkoutSessionId = text(body.checkoutSessionId);
+  let checkout: string | undefined;
+  if (checkoutSessionId) {
+    if (!checkoutSessionId.startsWith("cs_")) {
+      errors["payment"] = "Card checkout is incomplete. Please try again.";
+    } else {
+      checkout = checkoutSessionId;
+    }
+  }
+
   if (Object.keys(errors).length > 0) return { ok: false, errors };
 
   return {
@@ -251,6 +279,8 @@ export function validateOrderRequest(input: unknown): ValidationResult {
       },
       instructions: text(body.instructions).slice(0, MAX_LENGTHS.instructions),
       acceptedCancellationPolicy,
+      ...(payment ? { payment } : {}),
+      ...(checkout ? { checkoutSessionId: checkout } : {}),
     },
   };
 }

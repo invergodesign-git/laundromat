@@ -50,6 +50,18 @@ export interface OrderPickup {
   windowId: PickupWindowId;
 }
 
+/**
+ * Card saved at booking for later charge / cancellation fee. Nothing is
+ * charged when this is recorded — that happens after pickup (or on no-show).
+ */
+export interface OrderPayment {
+  customerId: string;
+  paymentMethodId: string;
+  setupIntentId: string;
+  brand: string;
+  last4: string;
+}
+
 /** What the browser posts to the intake route. */
 export interface OrderRequest {
   contact: OrderContact;
@@ -64,6 +76,18 @@ export interface OrderRequest {
    * point of asking.
    */
   acceptedCancellationPolicy: boolean;
+  /**
+   * Present when Stripe is configured. Prefer `checkoutSessionId` from
+   * Stripe-hosted Checkout (setup mode). Legacy Elements SetupIntent IDs
+   * remain accepted. The server re-verifies against Stripe.
+   */
+  payment?: {
+    customerId: string;
+    paymentMethodId: string;
+    setupIntentId: string;
+  };
+  /** Stripe Checkout Session id (`cs_…`) after hosted card save. */
+  checkoutSessionId?: string;
 }
 
 /**
@@ -81,6 +105,8 @@ export interface Order extends OrderRequest {
   laundryTotal: number;
   addOnTotal: number;
   total: number;
+  /** Filled after Stripe verifies the SetupIntent. */
+  cardOnFile?: OrderPayment;
 }
 
 /**

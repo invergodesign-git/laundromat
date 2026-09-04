@@ -27,10 +27,19 @@ export const BUSINESS = {
   email: "washnow@californialaundromat.com",
   emailHref: "mailto:washnow@californialaundromat.com",
   /**
-   * Where "Leave a review" sends people. Point this at the Google Business
-   * review link once the listing is confirmed; until then it is the phone.
+   * Mailing address only — not a shop customers visit, and not the pickup
+   * origin used for mileage. Shown in contact so mail and formal notices
+   * have somewhere to go.
    */
-  reviewHref: process.env.NEXT_PUBLIC_REVIEW_URL ?? "",
+  poBox: "PO Box 83772, San Diego, CA 92138",
+  /**
+   * Google Business listing. Env overrides this if a dedicated write-a-review
+   * URL is added later; until then the share link the owner sent is enough
+   * to open the listing.
+   */
+  reviewHref:
+    process.env.NEXT_PUBLIC_REVIEW_URL?.trim() ||
+    "https://share.google/vAXhy2Q2I6lQn7cNc",
 } as const;
 
 /**

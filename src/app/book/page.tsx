@@ -44,8 +44,8 @@ const REASSURANCE = [
   },
   {
     icon: ShieldCheck,
-    title: "Nothing charged yet",
-    body: `We weigh your bag at pickup and that is what you pay for. Orders start at the ${MIN_ORDER_LBS} lb minimum.`,
+    title: "Card on file, not charged yet",
+    body: `You save a card on Stripe’s secure checkout when you book. The real weight is charged after pickup. Orders start at the ${MIN_ORDER_LBS} lb minimum.`,
   },
 ];
 
@@ -62,7 +62,7 @@ export default function BookPage() {
             We&rsquo;ll take it <Highlight accent="aqua">from there.</Highlight>
           </>
         }
-        lead="Everything we need in one form — your address, when to come, and what you want done. No phone tag, and no repeating yourself later."
+        lead="Six short steps — address, timing, speed, bag, your details, then confirm. No phone tag, nothing charged until we weigh the bag."
       />
 
       <section className="bg-foam-deep">
@@ -89,7 +89,7 @@ export default function BookPage() {
       </section>
 
       <section className="bg-foam">
-        <div className="mx-auto max-w-[1440px] px-5 pb-24 sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-6xl px-5 pb-24 sm:px-8 lg:px-10">
           <BookingForm />
         </div>
       </section>

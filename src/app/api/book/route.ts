@@ -23,6 +23,12 @@ import { serviceAreaError, validateOrderRequest } from "@/lib/orders/schema";
 import type { Order } from "@/lib/orders/types";
 import { calculateEstimate } from "@/lib/pricing";
 import { BUSINESS } from "@/lib/business";
+import { isStripeConfigured } from "@/lib/stripe/config";
+import {
+  markSetupIntentBooked,
+  verifyCheckoutSession,
+  verifySetupIntent,
+} from "@/lib/stripe/verify";
 
 /** Booking is deliberate and rare, so this can be far tighter than search. */
 const limiter = new RateLimiter(8, 60 * 60 * 1000);
@@ -105,6 +111,30 @@ export async function POST(request: Request) {
     addOnIds: submitted.service.addOnIds,
   });
 
+  // ---- Card on file -------------------------------------------------------
+  // When Stripe is configured, a booking without a verified Checkout session
+  // (or legacy SetupIntent) is rejected — pre-authorisation for no-shows.
+  let cardOnFile: Order["cardOnFile"];
+  if (isStripeConfigured()) {
+    if (submitted.checkoutSessionId) {
+      const verified = await verifyCheckoutSession(submitted.checkoutSessionId);
+      if ("error" in verified) {
+        return error(422, verified.error, { payment: verified.error });
+      }
+      cardOnFile = verified;
+    } else if (submitted.payment) {
+      const verified = await verifySetupIntent(submitted.payment);
+      if ("error" in verified) {
+        return error(422, verified.error, { payment: verified.error });
+      }
+      cardOnFile = verified;
+    } else {
+      return error(422, "Please add a card before booking.", {
+        payment: "Please add a card before booking.",
+      });
+    }
+  }
+
   const order: Order = {
     ...submitted,
     reference: createOrderReference(),
@@ -118,20 +148,63 @@ export async function POST(request: Request) {
       .filter((line) => line.id !== estimate.tier.id)
       .reduce((sum, line) => sum + line.amount, 0),
     total: estimate.total,
+    ...(cardOnFile ? { cardOnFile } : {}),
   };
 
   // ---- Deliver it ---------------------------------------------------------
   const email = getEmailProvider();
   const inbox = getOrderInbox();
 
+  // Local Stripe testing often has no Resend keys. Opt-in only — never silent
+  // on production without email.
+  const allowWithoutEmail =
+    process.env.BOOKING_ALLOW_NO_EMAIL?.trim() === "true";
+
   if (!email || !inbox) {
-    console.error("[book] email unconfigured — order could not be delivered", {
-      reference: order.reference,
-    });
-    return error(
-      503,
-      `Online booking is briefly unavailable. Please call ${BUSINESS.phoneDisplay} and we will take your order over the phone.`
+    if (!allowWithoutEmail) {
+      console.error("[book] email unconfigured — order could not be delivered", {
+        reference: order.reference,
+      });
+      return error(
+        503,
+        "Booking email is not configured on this server (RESEND_API_KEY, ORDER_EMAIL_FROM, ORDER_EMAIL_TO). For local Stripe tests set BOOKING_ALLOW_NO_EMAIL=true in .env.local, or add the Resend keys."
+      );
+    }
+
+    console.warn(
+      "[book] BOOKING_ALLOW_NO_EMAIL — accepting order without email",
+      {
+        reference: order.reference,
+        email: order.contact.email,
+        total: order.total,
+        card: order.cardOnFile
+          ? `${order.cardOnFile.brand} ${order.cardOnFile.last4}`
+          : null,
+      }
     );
+
+    if (order.cardOnFile) {
+      await markSetupIntentBooked(
+        order.cardOnFile.setupIntentId,
+        order.reference
+      );
+    }
+
+    return Response.json({
+      reference: order.reference,
+      distanceMiles: order.distanceMiles,
+      deliveryFee: order.deliveryFee,
+      total: order.total,
+      emailSkipped: true,
+      ...(order.cardOnFile
+        ? {
+            card: {
+              brand: order.cardOnFile.brand,
+              last4: order.cardOnFile.last4,
+            },
+          }
+        : {}),
+    });
   }
 
   const ticket = renderBusinessEmail(order);
@@ -177,10 +250,25 @@ export async function POST(request: Request) {
     });
   }
 
+  if (order.cardOnFile) {
+    await markSetupIntentBooked(
+      order.cardOnFile.setupIntentId,
+      order.reference
+    );
+  }
+
   return Response.json({
     reference: order.reference,
     distanceMiles: order.distanceMiles,
     deliveryFee: order.deliveryFee,
     total: order.total,
+    ...(order.cardOnFile
+      ? {
+          card: {
+            brand: order.cardOnFile.brand,
+            last4: order.cardOnFile.last4,
+          },
+        }
+      : {}),
   });
 }

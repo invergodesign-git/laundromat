@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Clock, Mail, MapPin, Phone, Truck } from "lucide-react";
+import { Clock, Inbox, Mail, MapPin, Phone, Truck } from "lucide-react";
 import { BubbleAccent } from "@/components/concept/motion/Bubbles";
 import { Highlight, PageHero } from "@/components/site/PageHero";
 import { PageShell } from "@/components/site/PageShell";
@@ -105,7 +105,7 @@ export default function ContactPage() {
               </div>
             </div>
 
-            <div className="rounded-[32px] bg-white p-8 ring-2 ring-inset ring-mint/50 lg:col-span-6">
+            <div className="rounded-[32px] bg-white p-8 ring-2 ring-inset ring-mint/50 lg:col-span-4">
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-mint text-ink">
                 <MapPin className="h-6 w-6" strokeWidth={1.8} />
               </span>
@@ -119,7 +119,21 @@ export default function ContactPage() {
               </p>
             </div>
 
-            <div className="rounded-[32px] bg-white p-8 ring-2 ring-inset ring-blush/50 lg:col-span-6">
+            <div className="rounded-[32px] bg-white p-8 ring-2 ring-inset ring-ink/8 lg:col-span-4">
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-foam-deep text-ink">
+                <Inbox className="h-6 w-6" strokeWidth={1.8} />
+              </span>
+              <p className="mt-5 font-mono-meta text-ink/45">Mail</p>
+              <p className="mt-2 text-[1.25rem] font-semibold tracking-tight text-ink">
+                {BUSINESS.poBox}
+              </p>
+              <p className="mt-3 text-[1.0625rem] leading-relaxed text-ink/65">
+                For letters and formal notices. This is not a shop to visit —
+                pickups come to you.
+              </p>
+            </div>
+
+            <div className="rounded-[32px] bg-white p-8 ring-2 ring-inset ring-blush/50 lg:col-span-4">
               <span className="grid h-12 w-12 place-items-center rounded-2xl bg-blush text-ink">
                 <Truck className="h-6 w-6" strokeWidth={1.8} />
               </span>

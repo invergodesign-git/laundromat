@@ -123,6 +123,16 @@ export function renderBusinessEmail(order: Order): {
       ["Total", formatCurrency(order.total)],
     ]),
     "",
+    order.cardOnFile
+      ? rows([
+          [
+            "Card on file",
+            `${order.cardOnFile.brand} ending ${order.cardOnFile.last4}`,
+          ],
+          ["Stripe customer", order.cardOnFile.customerId],
+        ])
+      : "Card on file: none",
+    "",
     `Received ${new Date(order.receivedAt).toLocaleString("en-US")}`,
   ].join("\n");
 
@@ -189,6 +199,17 @@ export function renderBusinessEmail(order: Order): {
     )}</td></tr>
   </table>
   <p style="font-size:14px;color:#666;margin:8px 0 0">Nothing has been charged. Weigh at pickup.</p>
+  ${
+    order.cardOnFile
+      ? `<p style="font-size:15px;margin:16px 0 0;padding:12px 14px;background:#f4f7f9;border-radius:12px">Card on file: <strong>${escapeHtml(
+          order.cardOnFile.brand
+        )} ···· ${escapeHtml(
+          order.cardOnFile.last4
+        )}</strong><br/><span style="font-size:13px;color:#666">Stripe ${escapeHtml(
+          order.cardOnFile.customerId
+        )}</span></p>`
+      : ""
+  }
 </div>`.trim();
 
   return { subject, text, html };
@@ -226,6 +247,9 @@ export function renderCustomerEmail(order: Order): {
     ]),
     "",
     `This is an estimate based on the ${order.service.estimatedWeightLbs} lbs you told us about. We weigh your bag when we collect it, and that weight is what you actually pay for. Nothing has been charged yet.`,
+    order.cardOnFile
+      ? `We saved your ${order.cardOnFile.brand} ending in ${order.cardOnFile.last4} for after pickup.`
+      : "",
     "",
     order.minimumApplied
       ? `Heads up: orders are billed at a ${MIN_ORDER_LBS} lb minimum. If your bag comes in lighter, we may credit the difference against your next order.`
@@ -276,6 +300,13 @@ export function renderCustomerEmail(order: Order): {
     This is an estimate based on the ${
       order.service.estimatedWeightLbs
     } lbs you told us about. We weigh your bag when we collect it, and that weight is what you actually pay for. <strong>Nothing has been charged yet.</strong>
+    ${
+      order.cardOnFile
+        ? ` We saved your ${escapeHtml(order.cardOnFile.brand)} ending in ${escapeHtml(
+            order.cardOnFile.last4
+          )} for after pickup.`
+        : ""
+    }
   </p>
   ${
     order.minimumApplied

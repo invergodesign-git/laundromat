@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Clock, Mail, MapPin, Phone } from "lucide-react";
+import { Clock, Inbox, Mail, MapPin, Phone } from "lucide-react";
 import { BUSINESS, SERVICE_PROMISE } from "@/lib/business";
 import { NAV_LINKS } from "@/lib/nav";
 import { SERVICES } from "@/lib/services";
@@ -81,6 +81,10 @@ export function ConceptFooter() {
             <span className="flex gap-2.5">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-ember" />
               Serving {BUSINESS.servingArea}
+            </span>
+            <span className="flex gap-2.5">
+              <Inbox className="mt-0.5 h-4 w-4 shrink-0 text-ember" />
+              {BUSINESS.poBox}
             </span>
             <span className="flex items-center gap-2.5">
               <Clock className="h-4 w-4 shrink-0 text-ember" />

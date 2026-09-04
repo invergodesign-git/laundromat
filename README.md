@@ -76,11 +76,13 @@ updates every page that references them.
 ## Routes
 
 `/` · `/services` · `/services/[slug]` · `/pricing` · `/about` · `/blog` ·
-`/blog/[slug]` · `/reviews` · `/contact` · `/book`
+`/blog/[slug]` · `/reviews` · `/contact` · `/book` · `/ops` (private)
 
 Service and blog pages are generated from their data files via
 `generateStaticParams`, so adding an entry adds a page. `/book` is rendered per
 request because the earliest bookable pickup depends on the current time.
+`/ops` is a password-gated design demo of the private desk — not linked from
+the public nav, and not wired to live bookings yet.
 
 ## Booking
 
@@ -118,6 +120,17 @@ does not dead-end. It drops the timing and service questions, keeps the name,
 contact and address, and posts to `src/app/api/waitlist` instead — which
 re-measures the distance server-side and emails the lead separately from real
 orders, so a pickup that needs driving to is never buried among enquiries.
+
+## Ops dashboard (design demo)
+
+`/ops` is a private desk mock with the same visual language as the site.
+Today's dispatch board, orders, customers, out-of-area waitlist, and a Money
+screen that pretends to charge a card on file. All data is a fixture — status
+changes live in the browser and reset on refresh.
+
+Unlock with `laundromat-ops-demo` (baked in). Optional override:
+`OPS_DASHBOARD_PASSWORD`. Not listed in the public nav. Live bookings still
+arrive by email until a real store is wired in.
 
 Set `NEXT_PUBLIC_BOOKING_URL` to hand booking over to Square instead; every
 "Book now" button switches automatically.
