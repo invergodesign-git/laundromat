@@ -24,6 +24,7 @@ import type { Order } from "@/lib/orders/types";
 import { calculateEstimate } from "@/lib/pricing";
 import { BUSINESS } from "@/lib/business";
 import { isStripeConfigured } from "@/lib/stripe/config";
+import { chargeOffSession } from "@/lib/stripe/charge";
 import {
   markSetupIntentBooked,
   verifyCheckoutSession,
@@ -113,7 +114,7 @@ export async function POST(request: Request) {
 
   // ---- Card on file -------------------------------------------------------
   // When Stripe is configured, a booking without a verified Checkout session
-  // (or legacy SetupIntent) is rejected — pre-authorisation for no-shows.
+  // (or legacy SetupIntent) is rejected, then the estimate is charged immediately.
   let cardOnFile: Order["cardOnFile"];
   if (isStripeConfigured()) {
     if (submitted.checkoutSessionId) {
@@ -135,9 +136,27 @@ export async function POST(request: Request) {
     }
   }
 
+  const reference = createOrderReference();
+
+  let charge: Order["charge"];
+  if (cardOnFile) {
+    const charged = await chargeOffSession({
+      customerId: cardOnFile.customerId,
+      paymentMethodId: cardOnFile.paymentMethodId,
+      amountDollars: estimate.total,
+      reference,
+      idempotencyKey: `book-charge-${cardOnFile.setupIntentId}`,
+      description: `California Laundromat ${reference} (estimate)`,
+    });
+    if ("error" in charged) {
+      return error(402, charged.error, { payment: charged.error });
+    }
+    charge = charged;
+  }
+
   const order: Order = {
     ...submitted,
-    reference: createOrderReference(),
+    reference,
     receivedAt: new Date().toISOString(),
     distanceMiles,
     deliveryFee: estimate.deliveryFee,
@@ -149,6 +168,7 @@ export async function POST(request: Request) {
       .reduce((sum, line) => sum + line.amount, 0),
     total: estimate.total,
     ...(cardOnFile ? { cardOnFile } : {}),
+    ...(charge ? { charge } : {}),
   };
 
   // ---- Deliver it ---------------------------------------------------------
@@ -177,6 +197,7 @@ export async function POST(request: Request) {
         reference: order.reference,
         email: order.contact.email,
         total: order.total,
+        charge: order.charge?.paymentIntentId ?? null,
         card: order.cardOnFile
           ? `${order.cardOnFile.brand} ${order.cardOnFile.last4}`
           : null,
@@ -190,21 +211,7 @@ export async function POST(request: Request) {
       );
     }
 
-    return Response.json({
-      reference: order.reference,
-      distanceMiles: order.distanceMiles,
-      deliveryFee: order.deliveryFee,
-      total: order.total,
-      emailSkipped: true,
-      ...(order.cardOnFile
-        ? {
-            card: {
-              brand: order.cardOnFile.brand,
-              last4: order.cardOnFile.last4,
-            },
-          }
-        : {}),
-    });
+    return Response.json(bookingSuccessPayload(order, { emailSkipped: true }));
   }
 
   const ticket = renderBusinessEmail(order);
@@ -257,11 +264,26 @@ export async function POST(request: Request) {
     );
   }
 
-  return Response.json({
+  return Response.json(bookingSuccessPayload(order));
+}
+
+function bookingSuccessPayload(
+  order: Order,
+  extras?: { emailSkipped?: boolean }
+) {
+  return {
     reference: order.reference,
     distanceMiles: order.distanceMiles,
     deliveryFee: order.deliveryFee,
     total: order.total,
+    ...(extras?.emailSkipped ? { emailSkipped: true } : {}),
+    ...(order.charge
+      ? {
+          charged: true,
+          chargedAmount: order.charge.amount,
+          paymentIntentId: order.charge.paymentIntentId,
+        }
+      : { charged: false }),
     ...(order.cardOnFile
       ? {
           card: {
@@ -270,5 +292,5 @@ export async function POST(request: Request) {
           },
         }
       : {}),
-  });
+  };
 }

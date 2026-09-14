@@ -51,6 +51,8 @@ interface Success {
   total: number;
   deliveryFee: number;
   distanceMiles: number;
+  charged?: boolean;
+  chargedAmount?: number;
   card?: { brand: string; last4: string };
 }
 
@@ -573,12 +575,15 @@ export function BookingForm() {
         </dl>
 
         <p className="mt-6 text-[0.9375rem] leading-relaxed text-ink/60">
-          Nothing has been charged
-          {success.card
-            ? ` — we saved your ${success.card.brand} ending in ${success.card.last4}`
-            : ""}
-          . We weigh your bag when we collect it, and that weight is what you
-          pay for.
+          {success.charged
+            ? `We charged ${formatCurrency(
+                success.chargedAmount ?? success.total
+              )}${
+                success.card
+                  ? ` to your ${success.card.brand} ending in ${success.card.last4}`
+                  : ""
+              }. If the bag weighs differently at pickup, we will settle the difference with you.`
+            : "No card charge was taken with this booking."}
         </p>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -1080,9 +1085,9 @@ export function BookingForm() {
                   <div className="flex items-start gap-3 rounded-2xl bg-royal/8 px-4 py-4 text-[0.9375rem] leading-relaxed text-ink/75">
                     <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-royal" />
                     <p>
-                      Next you&rsquo;ll save a card on Stripe&rsquo;s secure
-                      checkout — nothing is charged now. After that we confirm
-                      the pickup automatically.
+                      Next you&rsquo;ll enter your card on Stripe&rsquo;s
+                      secure checkout. The estimated total is charged when the
+                      booking is confirmed.
                     </p>
                   </div>
                 )}
@@ -1151,7 +1156,7 @@ export function BookingForm() {
               ) : mode === "waitlist" ? (
                 "Tell me when you reach me"
               ) : stripeEnabled ? (
-                "Continue to secure card"
+                "Continue to pay"
               ) : (
                 "Book this pickup"
               )}
@@ -1250,8 +1255,8 @@ export function BookingForm() {
             {mode === "booking"
               ? isLastStep
                 ? stripeEnabled
-                  ? "Next step is Stripe Checkout to save a card — no charge. We weigh your bag at pickup."
-                  : "No payment is taken now. We weigh your bag at pickup and that weight is what you pay for."
+                  ? "Stripe Checkout next — then we charge the estimated total to confirm the pickup."
+                  : "No payment is taken online on this deployment."
                 : `Step ${step} of ${totalSteps} — estimate updates as you go.`
               : "Out of range for booking — join the waitlist on the left."}
           </p>

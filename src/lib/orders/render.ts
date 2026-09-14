@@ -109,7 +109,7 @@ export function renderBusinessEmail(order: Order): {
       ["Special instructions", order.instructions],
     ]),
     "",
-    "ESTIMATE (not charged — weigh at pickup)",
+    "ESTIMATE (charged at booking)",
     rows([
       [
         "Laundry",
@@ -123,15 +123,22 @@ export function renderBusinessEmail(order: Order): {
       ["Total", formatCurrency(order.total)],
     ]),
     "",
+    order.charge
+      ? rows([
+          ["Charged", formatCurrency(order.charge.amount)],
+          ["PaymentIntent", order.charge.paymentIntentId],
+        ])
+      : "Charge: not taken (Stripe off)",
+    "",
     order.cardOnFile
       ? rows([
           [
-            "Card on file",
+            "Card",
             `${order.cardOnFile.brand} ending ${order.cardOnFile.last4}`,
           ],
           ["Stripe customer", order.cardOnFile.customerId],
         ])
-      : "Card on file: none",
+      : "Card: none",
     "",
     `Received ${new Date(order.receivedAt).toLocaleString("en-US")}`,
   ].join("\n");
@@ -184,7 +191,7 @@ export function renderBusinessEmail(order: Order): {
       : ""
   }
 
-  <h2 style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#666;border-bottom:1px solid #e5e5e5;padding-bottom:6px;margin-top:28px">Estimate</h2>
+  <h2 style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#666;border-bottom:1px solid #e5e5e5;padding-bottom:6px;margin-top:28px">Estimate (charged)</h2>
   <table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:16px">
     <tr><td style="padding:6px 0">Laundry${
       order.minimumApplied
@@ -194,14 +201,20 @@ export function renderBusinessEmail(order: Order): {
     <tr><td style="padding:6px 0">Delivery</td><td align="right">${formatCurrency(
       order.deliveryFee
     )}</td></tr>
-    <tr style="border-top:2px solid #1a1a1a;font-weight:700"><td style="padding:10px 0">Total</td><td align="right">${formatCurrency(
+    <tr style="border-top:2px solid #1a1a1a;font-weight:700"><td style="padding:10px 0">Total charged</td><td align="right">${formatCurrency(
       order.total
     )}</td></tr>
   </table>
-  <p style="font-size:14px;color:#666;margin:8px 0 0">Nothing has been charged. Weigh at pickup.</p>
+  ${
+    order.charge
+      ? `<p style="font-size:14px;color:#166534;margin:8px 0 0">Charged ${formatCurrency(
+          order.charge.amount
+        )} · ${escapeHtml(order.charge.paymentIntentId)}</p>`
+      : `<p style="font-size:14px;color:#666;margin:8px 0 0">No Stripe charge on this order.</p>`
+  }
   ${
     order.cardOnFile
-      ? `<p style="font-size:15px;margin:16px 0 0;padding:12px 14px;background:#f4f7f9;border-radius:12px">Card on file: <strong>${escapeHtml(
+      ? `<p style="font-size:15px;margin:16px 0 0;padding:12px 14px;background:#f4f7f9;border-radius:12px">Card: <strong>${escapeHtml(
           order.cardOnFile.brand
         )} ···· ${escapeHtml(
           order.cardOnFile.last4
@@ -239,17 +252,16 @@ export function renderCustomerEmail(order: Order): {
       ["Add-ons", describeAddOns(order)],
     ]),
     "",
-    "YOUR ESTIMATE",
+    "YOUR TOTAL",
     rows([
       ["Laundry", formatCurrency(order.laundryTotal)],
       ["Delivery", formatCurrency(order.deliveryFee)],
-      ["Estimated total", formatCurrency(order.total)],
+      ["Total charged", formatCurrency(order.total)],
     ]),
     "",
-    `This is an estimate based on the ${order.service.estimatedWeightLbs} lbs you told us about. We weigh your bag when we collect it, and that weight is what you actually pay for. Nothing has been charged yet.`,
-    order.cardOnFile
-      ? `We saved your ${order.cardOnFile.brand} ending in ${order.cardOnFile.last4} for after pickup.`
-      : "",
+    order.charge
+      ? `We charged ${formatCurrency(order.charge.amount)} to your ${order.cardOnFile?.brand ?? "card"} ending in ${order.cardOnFile?.last4 ?? "****"} based on the ${order.service.estimatedWeightLbs} lbs you told us about. If the bag weighs differently at pickup, we will settle the difference with you.`
+      : `This total is based on the ${order.service.estimatedWeightLbs} lbs you told us about.`,
     "",
     order.minimumApplied
       ? `Heads up: orders are billed at a ${MIN_ORDER_LBS} lb minimum. If your bag comes in lighter, we may credit the difference against your next order.`
@@ -291,21 +303,26 @@ export function renderCustomerEmail(order: Order): {
     <tr><td style="padding:6px 0;color:#444">Delivery</td><td align="right">${formatCurrency(
       order.deliveryFee
     )}</td></tr>
-    <tr style="border-top:2px solid #1a1a1a;font-weight:700"><td style="padding:10px 0">Estimated total</td><td align="right">${formatCurrency(
+    <tr style="border-top:2px solid #1a1a1a;font-weight:700"><td style="padding:10px 0">Total charged</td><td align="right">${formatCurrency(
       order.total
     )}</td></tr>
   </table>
 
   <p style="font-size:15px;line-height:1.6;color:#555;margin:20px 0 0">
-    This is an estimate based on the ${
-      order.service.estimatedWeightLbs
-    } lbs you told us about. We weigh your bag when we collect it, and that weight is what you actually pay for. <strong>Nothing has been charged yet.</strong>
     ${
-      order.cardOnFile
-        ? ` We saved your ${escapeHtml(order.cardOnFile.brand)} ending in ${escapeHtml(
-            order.cardOnFile.last4
-          )} for after pickup.`
-        : ""
+      order.charge
+        ? `We charged <strong>${formatCurrency(
+            order.charge.amount
+          )}</strong>${
+            order.cardOnFile
+              ? ` to your ${escapeHtml(order.cardOnFile.brand)} ending in ${escapeHtml(
+                  order.cardOnFile.last4
+                )}`
+              : ""
+          } based on the ${
+            order.service.estimatedWeightLbs
+          } lbs you told us about. If the bag weighs differently at pickup, we will settle the difference with you.`
+        : `This total is based on the ${order.service.estimatedWeightLbs} lbs you told us about.`
     }
   </p>
   ${

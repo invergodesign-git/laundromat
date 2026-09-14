@@ -5,8 +5,8 @@ import { requestOrigin } from "@/lib/stripe/origin";
 import { validateOrderRequest } from "@/lib/orders/schema";
 
 /**
- * Starts Stripe-hosted Checkout in setup mode — saves a card, charges nothing.
- * The booking form redirects here; after Checkout, /book/complete finishes the order.
+ * Starts Stripe-hosted Checkout in setup mode — collects a card.
+ * After return, /api/book charges the estimated total off-session.
  */
 
 const limiter = new RateLimiter(20, 60 * 60 * 1000);

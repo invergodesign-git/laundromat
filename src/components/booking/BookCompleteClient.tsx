@@ -16,6 +16,8 @@ interface Success {
   total: number;
   deliveryFee: number;
   distanceMiles: number;
+  charged?: boolean;
+  chargedAmount?: number;
   card?: { brand: string; last4: string };
 }
 
@@ -98,10 +100,10 @@ export function BookCompleteClient() {
       <div className="glass mx-auto max-w-xl rounded-[32px] p-10 text-center">
         <Loader2 className="mx-auto h-8 w-8 animate-spin text-royal" />
         <p className="mt-5 text-[1.0625rem] font-semibold text-ink">
-          Confirming your card and booking&hellip;
+          Confirming your card and charging the estimate&hellip;
         </p>
         <p className="mt-2 text-[0.9375rem] text-ink/60">
-          Nothing is charged — we are just locking in the pickup.
+          Your pickup is locked in once payment succeeds.
         </p>
       </div>
     );
@@ -174,12 +176,15 @@ export function BookCompleteClient() {
       </dl>
 
       <p className="mt-6 text-[0.9375rem] leading-relaxed text-ink/60">
-        Nothing has been charged
-        {success.card
-          ? ` — we saved your ${success.card.brand} ending in ${success.card.last4}`
-          : ""}
-        . We weigh your bag when we collect it, and that weight is what you pay
-        for.
+        {success.charged
+          ? `We charged ${formatCurrency(
+              success.chargedAmount ?? success.total
+            )}${
+              success.card
+                ? ` to your ${success.card.brand} ending in ${success.card.last4}`
+                : ""
+            }. If the bag weighs differently at pickup, we will settle the difference with you.`
+          : "No card charge was taken with this booking."}
       </p>
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">

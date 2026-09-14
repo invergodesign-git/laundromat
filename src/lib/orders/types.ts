@@ -51,8 +51,8 @@ export interface OrderPickup {
 }
 
 /**
- * Card saved at booking for later charge / cancellation fee. Nothing is
- * charged when this is recorded — that happens after pickup (or on no-show).
+ * Card saved at booking, then charged for the estimated total.
+ * Actual bag weight at pickup may differ — the business adjusts afterwards.
  */
 export interface OrderPayment {
   customerId: string;
@@ -60,6 +60,14 @@ export interface OrderPayment {
   setupIntentId: string;
   brand: string;
   last4: string;
+}
+
+/** Successful off-session charge taken when the booking was accepted. */
+export interface OrderCharge {
+  paymentIntentId: string;
+  amount: number;
+  currency: string;
+  status: string;
 }
 
 /** What the browser posts to the intake route. */
@@ -105,8 +113,10 @@ export interface Order extends OrderRequest {
   laundryTotal: number;
   addOnTotal: number;
   total: number;
-  /** Filled after Stripe verifies the SetupIntent. */
+  /** Filled after Stripe verifies the SetupIntent / Checkout session. */
   cardOnFile?: OrderPayment;
+  /** Filled after the estimated total is charged off-session. */
+  charge?: OrderCharge;
 }
 
 /**

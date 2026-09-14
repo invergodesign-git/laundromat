@@ -44,8 +44,8 @@ const REASSURANCE = [
   },
   {
     icon: ShieldCheck,
-    title: "Card on file, not charged yet",
-    body: `You save a card on Stripe’s secure checkout when you book. The real weight is charged after pickup. Orders start at the ${MIN_ORDER_LBS} lb minimum.`,
+    title: "Pay when you book",
+    body: `Your card is charged the estimated total at booking. If the bag weighs differently at pickup, we settle the difference. Orders start at the ${MIN_ORDER_LBS} lb minimum.`,
   },
 ];
 
@@ -62,7 +62,7 @@ export default function BookPage() {
             We&rsquo;ll take it <Highlight accent="aqua">from there.</Highlight>
           </>
         }
-        lead="Six short steps — address, timing, speed, bag, your details, then confirm. No phone tag, nothing charged until we weigh the bag."
+        lead="Six short steps — address, timing, speed, bag, your details, then pay securely. Your estimate is charged when the booking is confirmed."
       />
 
       <section className="bg-foam-deep">
