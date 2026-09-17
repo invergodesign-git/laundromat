@@ -1,12 +1,11 @@
 /**
- * Booking target.
+ * Booking + estimator targets.
  *
- * By default every "Book now" goes to `/book`, the site's own intake form —
- * the customer enters their details once and the order arrives complete.
+ * By default every "Book now" goes to `/book`, the site's own intake form.
+ * "Estimator" goes to the pricing calculator (`/pricing#pricing`).
  *
- * `NEXT_PUBLIC_BOOKING_URL` overrides this. Set it to a Square booking page
- * and every button on the site switches over with no component changes, which
- * keeps the option open without committing to it now.
+ * `NEXT_PUBLIC_BOOKING_URL` overrides the book target only (e.g. external
+ * Square). Leave it blank so booking stays on this site.
  */
 
 const configured = process.env.NEXT_PUBLIC_BOOKING_URL?.trim();
@@ -17,4 +16,10 @@ export const BOOKING = {
   href: configured || "/book",
   target: configured ? "_blank" : undefined,
   rel: configured ? "noopener noreferrer" : undefined,
+} as const;
+
+/** Price calculator — home `#pricing` or the dedicated pricing page. */
+export const ESTIMATOR = {
+  href: "/pricing#pricing",
+  homeHref: "#pricing",
 } as const;

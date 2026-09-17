@@ -13,6 +13,8 @@ const MIN_QUERY_LENGTH = 3;
 interface AddressAutocompleteProps {
   id: string;
   placeholder?: string;
+  /** Prefill when carrying an address from the pricing estimator. */
+  initialLabel?: string;
   /** Fired when a suggestion is chosen from the list. */
   onSelect: (suggestion: AddressSuggestion) => void;
   /** Fired when the text no longer matches the chosen suggestion. */
@@ -33,6 +35,7 @@ interface AddressAutocompleteProps {
 export function AddressAutocomplete({
   id,
   placeholder = "Start typing your street address",
+  initialLabel,
   onSelect,
   onClear,
   onUnavailable,
@@ -41,7 +44,7 @@ export function AddressAutocomplete({
   const listboxId = useId();
   const optionId = useId();
 
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialLabel ?? "");
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -51,7 +54,7 @@ export function AddressAutocomplete({
 
   const wrapper = useRef<HTMLDivElement>(null);
   /** Text of the suggestion currently accepted, so we can detect edits. */
-  const selectedText = useRef<string | null>(null);
+  const selectedText = useRef<string | null>(initialLabel ?? null);
 
   // Debounced lookup. The abort controller cancels the in-flight request when
   // another keystroke arrives, so late responses can never overwrite newer ones.

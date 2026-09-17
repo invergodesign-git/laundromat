@@ -23,6 +23,10 @@ import {
 import { fetchDistanceMiles } from "@/lib/geo/client";
 import { GeoError, type AddressSuggestion } from "@/lib/geo/types";
 import { saveBookingDraft } from "@/lib/orders/draft";
+import {
+  clearEstimateDraft,
+  readEstimateDraft,
+} from "@/lib/orders/estimate-draft";
 import type { OrderFieldErrors } from "@/lib/orders/types";
 import {
   ADD_ONS,
@@ -186,8 +190,59 @@ export function BookingForm() {
   const [status, setStatus] = useState<SubmitStatus>("idle");
   const [success, setSuccess] = useState<Success | null>(null);
   const [joinedWaitlist, setJoinedWaitlist] = useState(false);
+  const [addressInitialLabel, setAddressInitialLabel] = useState<
+    string | undefined
+  >(undefined);
+  const [fromEstimator, setFromEstimator] = useState(false);
+  const [estimatePrefillDone, setEstimatePrefillDone] = useState(false);
 
   const windows = useMemo(() => pickupWindowsForDate(pickupDate), [pickupDate]);
+
+  // Carry pricing-calculator choices into the booking steps.
+  useEffect(() => {
+    const draft = readEstimateDraft();
+    if (!draft) {
+      setEstimatePrefillDone(true);
+      return;
+    }
+
+    setTierId(draft.tierId);
+    setWeightLbs(draft.weightLbs);
+    setAddOnIds(draft.addOnIds);
+    setFromEstimator(true);
+
+    if (draft.address) {
+      setAddress(draft.address);
+      setAddressInitialLabel(draft.address.label);
+      if (draft.distanceMiles != null) {
+        setDistanceMiles(draft.distanceMiles);
+        setDistanceStatus("done");
+      } else {
+        void (async () => {
+          setDistanceStatus("loading");
+          try {
+            const miles = await fetchDistanceMiles({
+              lat: draft.address!.lat,
+              lon: draft.address!.lon,
+            });
+            setDistanceMiles(miles);
+            setDistanceStatus("done");
+          } catch (error) {
+            setDistanceMiles(null);
+            setDistanceStatus("error");
+            setDistanceError(
+              error instanceof GeoError
+                ? error.message
+                : "We could not measure the distance to that address."
+            );
+          }
+        })();
+      }
+    }
+
+    clearEstimateDraft();
+    setEstimatePrefillDone(true);
+  }, []);
 
   const outOfArea =
     distanceStatus === "done" &&
@@ -677,6 +732,13 @@ export function BookingForm() {
             {stepTitle}
           </h2>
 
+          {estimatePrefillDone && fromEstimator && step === 1 && (
+            <p className="mt-3 rounded-2xl bg-mint/20 px-4 py-3 text-[0.875rem] leading-relaxed text-ink/70">
+              We brought your estimator choices across — check them and
+              continue. You can still change anything.
+            </p>
+          )}
+
           <div className="mt-6 grid gap-5">
             {/* 1 — Where */}
             {step === 1 && (
@@ -687,12 +749,19 @@ export function BookingForm() {
                   hint="Pick from the list so we can measure the delivery."
                   error={errors["address.label"]}
                 >
-                  <AddressAutocomplete
-                    id="booking-address"
-                    onSelect={handleAddressSelect}
-                    onClear={handleAddressClear}
-                    onUnavailable={setDistanceError}
-                  />
+                  {estimatePrefillDone ? (
+                    <AddressAutocomplete
+                      id="booking-address"
+                      initialLabel={addressInitialLabel}
+                      onSelect={handleAddressSelect}
+                      onClear={handleAddressClear}
+                      onUnavailable={setDistanceError}
+                    />
+                  ) : (
+                    <div className={cn(inputClass, "flex items-center text-ink/40")}>
+                      Loading address…
+                    </div>
+                  )}
                 </Field>
 
                 {distanceStatus === "loading" && (

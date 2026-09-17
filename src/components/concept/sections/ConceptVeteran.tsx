@@ -7,6 +7,7 @@ import { MaskLines } from "@/components/concept/motion/MaskLines";
 import { SlideFill } from "@/components/concept/motion/SlideFill";
 import { gsap, prefersReducedMotion } from "@/lib/gsap";
 import { BUSINESS } from "@/lib/business";
+import { ESTIMATOR } from "@/lib/booking";
 
 /**
  * Section 05 — Veteran owned close.
@@ -68,8 +69,8 @@ export function ConceptVeteran() {
           </p>
 
           <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <SlideFill href="#pricing" variant="primary" size="lg" arrow>
-              Book now
+            <SlideFill href={ESTIMATOR.homeHref} variant="primary" size="lg" arrow>
+              Estimator
             </SlideFill>
             <SlideFill href={BUSINESS.phoneHref} variant="glass" size="lg" magnetic={false}>
               Contact Us

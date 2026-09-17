@@ -51,7 +51,7 @@ export default function PricingPage() {
           DELIVERY_FEE_CAP
         )}, however far out you are. Work out your own number below, or scroll for the full list.`}
       >
-        <CtaRow bookLabel="Book a pickup" />
+        <CtaRow bookLabel="Book a pickup" bookHref="/book" />
       </PageHero>
 
       <ConceptPricing />

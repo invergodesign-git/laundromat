@@ -52,7 +52,7 @@ export default async function ServiceDetailPage(
         lead={service.tagline}
         image={{ src: service.image, alt: service.imageAlt }}
       >
-        <CtaRow bookLabel="Book this service" />
+        <CtaRow bookLabel="Book this service" bookHref="/book" />
       </PageHero>
 
       {/* What it is */}

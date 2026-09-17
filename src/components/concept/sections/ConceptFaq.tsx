@@ -45,7 +45,7 @@ const FAQS = [
   },
   {
     q: "How do I book?",
-    a: "Check your price with the calculator, then call us to arrange pickup. Nothing is charged on this website, and you're not signing up to anything.",
+    a: "Check your price with the calculator, then book online — your estimate carries into the booking form. Your card is charged the order total when you confirm.",
   },
   {
     q: "Is this veteran owned?",

@@ -8,6 +8,7 @@ import { Bubbles } from "@/components/concept/motion/Bubbles";
 import { SlideFill } from "@/components/concept/motion/SlideFill";
 import { DrawSVGPlugin, EASE, gsap, prefersReducedMotion, SplitText } from "@/lib/gsap";
 import { BUSINESS } from "@/lib/business";
+import { ESTIMATOR } from "@/lib/booking";
 import {
   DELIVERY_FEE_CAP,
   DELIVERY_RATE_PER_MILE,
@@ -222,8 +223,8 @@ export function ConceptHero() {
 
           <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="hero-cta">
-              <SlideFill href="#pricing" variant="primary" size="lg" arrow>
-                Book now
+              <SlideFill href={ESTIMATOR.homeHref} variant="primary" size="lg" arrow>
+                Estimator
               </SlideFill>
             </div>
             <div className="hero-cta">

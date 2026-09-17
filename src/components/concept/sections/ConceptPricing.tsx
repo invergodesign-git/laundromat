@@ -16,14 +16,20 @@ import {
   DEFAULT_TIER_ID,
   DELIVERY_FEE_CAP,
   DELIVERY_RATE_PER_MILE,
+  isAddOnId,
   isDeliveryCapped,
+  isTurnaroundTierId,
   isWithinServiceArea,
   LOWEST_RATE_PER_LB,
   MAX_SERVICE_RADIUS_MILES,
   MIN_ORDER_LBS,
   TURNAROUND_TIERS,
+  type AddOnId,
+  type TurnaroundTierId,
 } from "@/lib/pricing";
 import { BUSINESS } from "@/lib/business";
+import { BOOKING } from "@/lib/booking";
+import { saveEstimateDraft } from "@/lib/orders/estimate-draft";
 import { cn, formatCurrency } from "@/lib/utils";
 
 type Status = "idle" | "loading" | "done" | "error";
@@ -50,6 +56,8 @@ export function ConceptPricing() {
   const [weightLbs, setWeightLbs] = useState<number>(MIN_ORDER_LBS);
   const [tierId, setTierId] = useState<string>(DEFAULT_TIER_ID);
   const [addOnIds, setAddOnIds] = useState<string[]>([]);
+  const [selectedAddress, setSelectedAddress] =
+    useState<AddressSuggestion | null>(null);
 
   const outOfArea =
     status === "done" &&
@@ -77,6 +85,7 @@ export function ConceptPricing() {
     const controller = new AbortController();
     lookup.current = controller;
 
+    setSelectedAddress(suggestion);
     setStatus("loading");
     setError(null);
     setDistanceMiles(null);
@@ -99,10 +108,24 @@ export function ConceptPricing() {
 
   const handleClear = useCallback(() => {
     lookup.current?.abort();
+    setSelectedAddress(null);
     setStatus("idle");
     setDistanceMiles(null);
     setError(null);
   }, []);
+
+  const goToBooking = () => {
+    const safeTier = isTurnaroundTierId(tierId) ? tierId : DEFAULT_TIER_ID;
+    const safeAddOns = addOnIds.filter(isAddOnId) as AddOnId[];
+    saveEstimateDraft({
+      tierId: safeTier as TurnaroundTierId,
+      weightLbs,
+      addOnIds: safeAddOns,
+      address: selectedAddress,
+      distanceMiles: hasDistance ? distanceMiles : null,
+    });
+    window.location.href = BOOKING.href;
+  };
 
   const handleUnavailable = useCallback((message: string) => {
     setStatus("error");
@@ -150,7 +173,7 @@ export function ConceptPricing() {
                 <br />
                 See your price.
                 <br />
-                Then call us.
+                Then book.
               </h2>
             </MaskLines>
           </div>
@@ -490,8 +513,7 @@ export function ConceptPricing() {
               <div className="mt-7 flex flex-col gap-3 border-t border-ink/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
                 <p className="max-w-md text-[0.75rem] leading-relaxed text-ink/45">
                   Delivery is measured as the driving distance to your address.
-                  Final weight is measured when we collect, and nothing is
-                  charged here.{" "}
+                  Your choices carry into booking so you do not re-enter them.{" "}
                   <a
                     href="https://www.geoapify.com/"
                     target="_blank"
@@ -502,12 +524,23 @@ export function ConceptPricing() {
                   </a>
                   .
                 </p>
-                <a
-                  href={BUSINESS.phoneHref}
-                  className="font-mono-meta whitespace-nowrap text-ink/70 transition-colors hover:text-royal"
-                >
-                  Call to book →
-                </a>
+                {outOfArea ? (
+                  <a
+                    href={BUSINESS.phoneHref}
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-royal px-6 font-semibold text-white transition-transform hover:-translate-y-0.5"
+                  >
+                    <Phone className="h-4 w-4" />
+                    Call to arrange
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={goToBooking}
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-ember px-6 font-semibold text-white transition-transform hover:-translate-y-0.5"
+                  >
+                    Book this pickup →
+                  </button>
+                )}
               </div>
             </div>
           </div>

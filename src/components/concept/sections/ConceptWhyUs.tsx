@@ -64,8 +64,8 @@ const REASONS = [
   },
   {
     icon: BadgeCheck,
-    title: "Nothing to sign up for",
-    body: "No account, no subscription, no card on file. Check your price, call, and that is the whole process.",
+    title: "Book online in minutes",
+    body: "Check your price, then book online — your estimate carries into the form. No phone tag required.",
     tint: "bg-rich text-white",
     tilt: "rotate-2",
     src: "/images/real/handoff.jpg",
