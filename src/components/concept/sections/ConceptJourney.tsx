@@ -5,7 +5,9 @@ import Image from "next/image";
 import { useGSAP } from "@gsap/react";
 import { useIntro } from "@/components/concept/IntroContext";
 import { Bubbles } from "@/components/concept/motion/Bubbles";
+import { SlideFill } from "@/components/concept/motion/SlideFill";
 import { DrawSVGPlugin, gsap, MotionPathPlugin, prefersReducedMotion } from "@/lib/gsap";
+import { ESTIMATOR } from "@/lib/booking";
 
 const STAGES = [
   {
@@ -60,7 +62,7 @@ const DETAILS = [
   },
   {
     q: "What if something needs special care?",
-    a: "Tell us on the call. Anything delicate gets pulled out and handled separately rather than being pushed through the standard run.",
+    a: "Note it when you book. Anything delicate gets pulled out and handled separately rather than being pushed through the standard run.",
   },
   {
     q: "When does it come back?",
@@ -388,6 +390,25 @@ export function ConceptJourney() {
             </div>
           ))}
         </dl>
+
+        {/* Next step after understanding the flow: open the estimator. */}
+        <div className="mt-16 flex flex-col gap-5 border-t border-ink/10 pt-12 sm:mt-20 sm:flex-row sm:items-end sm:justify-between sm:gap-8 sm:pt-14">
+          <div className="max-w-xl">
+            <p className="font-mono-meta text-royal">Next step</p>
+            <h3 className="mt-3 font-display text-[clamp(1.75rem,4vw,2.75rem)] leading-[1.05] tracking-[-0.02em] text-ink">
+              See your price, then book.
+            </h3>
+            <p className="mt-3 max-w-md text-[1.0625rem] leading-relaxed text-ink/65">
+              Open the estimator, check your total, and carry those choices
+              straight into booking.
+            </p>
+          </div>
+          <div className="shrink-0">
+            <SlideFill href={ESTIMATOR.homeHref} variant="primary" size="lg" arrow>
+              Open the estimator
+            </SlideFill>
+          </div>
+        </div>
       </div>
     </section>
   );

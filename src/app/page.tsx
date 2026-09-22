@@ -27,11 +27,11 @@ export default function Home() {
         <main>
           <ConceptHero />
           <ConceptJourney />
+          <ConceptPricing />
           <ConceptVeteran />
           <ConceptProcess />
           <ConceptServicesTeaser />
           <ConceptWhyUs />
-          <ConceptPricing />
           <ConceptReviews />
           <ConceptServeAreas />
           <ConceptBlogTeaser />
