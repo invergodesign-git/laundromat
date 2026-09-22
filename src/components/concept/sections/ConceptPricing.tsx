@@ -510,8 +510,8 @@ export function ConceptPricing() {
                 </p>
               )}
 
-              <div className="mt-7 flex flex-col gap-3 border-t border-ink/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
-                <p className="max-w-md text-[0.75rem] leading-relaxed text-ink/45">
+              <div className="mt-7 flex flex-col gap-3 border-t border-ink/10 pt-6 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                <p className="min-w-0 max-w-[16.5rem] text-[0.6875rem] leading-relaxed text-ink/45 sm:max-w-[18rem]">
                   Delivery is measured as the driving distance to your address.
                   Your choices carry into booking so you do not re-enter them.{" "}
                   <a
@@ -527,7 +527,7 @@ export function ConceptPricing() {
                 {outOfArea ? (
                   <a
                     href={BUSINESS.phoneHref}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-royal px-6 font-semibold text-white transition-transform hover:-translate-y-0.5"
+                    className="inline-flex h-12 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-royal px-6 font-semibold text-white transition-transform hover:-translate-y-0.5"
                   >
                     <Phone className="h-4 w-4" />
                     Call to arrange
@@ -536,7 +536,7 @@ export function ConceptPricing() {
                   <button
                     type="button"
                     onClick={goToBooking}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-ember px-6 font-semibold text-white transition-transform hover:-translate-y-0.5"
+                    className="inline-flex h-12 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-ember px-6 font-semibold text-white transition-transform hover:-translate-y-0.5"
                   >
                     Book this pickup →
                   </button>
