@@ -363,10 +363,27 @@ export function ConceptJourney() {
         </div>
       </div>
 
-      {/* Scrolls normally once the pinned run finishes — the detail people
-          want before they hand over a bag, without hijacking more scroll. */}
+      {/* After the pinned journey: lead into the estimator, then the FAQ. */}
       <div className="relative mx-auto w-full max-w-[1440px] px-5 pb-24 pt-20 sm:px-8 sm:pb-28 sm:pt-24 lg:px-10">
-        <div className="max-w-3xl">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
+          <div className="max-w-xl">
+            <p className="font-mono-meta text-royal">Next step</p>
+            <h3 className="mt-3 font-display text-[clamp(1.75rem,4vw,2.75rem)] leading-[1.05] tracking-[-0.02em] text-ink">
+              See your price, then book.
+            </h3>
+            <p className="mt-3 max-w-md text-[1.0625rem] leading-relaxed text-ink/65">
+              Open the estimator, check your total, and carry those choices
+              straight into booking.
+            </p>
+          </div>
+          <div className="shrink-0">
+            <SlideFill href={ESTIMATOR.homeHref} variant="primary" size="lg" arrow>
+              Open the estimator
+            </SlideFill>
+          </div>
+        </div>
+
+        <div className="mt-16 max-w-3xl border-t border-ink/10 pt-12 sm:mt-20 sm:pt-14">
           <p className="font-mono-meta text-royal">Before you book</p>
           <h3 className="mt-4 font-display text-[clamp(2rem,5vw,3.5rem)] leading-[1.02] tracking-[-0.02em] text-ink">
             The bits people always ask about.
@@ -390,25 +407,6 @@ export function ConceptJourney() {
             </div>
           ))}
         </dl>
-
-        {/* Next step after understanding the flow: open the estimator. */}
-        <div className="mt-16 flex flex-col gap-5 border-t border-ink/10 pt-12 sm:mt-20 sm:flex-row sm:items-end sm:justify-between sm:gap-8 sm:pt-14">
-          <div className="max-w-xl">
-            <p className="font-mono-meta text-royal">Next step</p>
-            <h3 className="mt-3 font-display text-[clamp(1.75rem,4vw,2.75rem)] leading-[1.05] tracking-[-0.02em] text-ink">
-              See your price, then book.
-            </h3>
-            <p className="mt-3 max-w-md text-[1.0625rem] leading-relaxed text-ink/65">
-              Open the estimator, check your total, and carry those choices
-              straight into booking.
-            </p>
-          </div>
-          <div className="shrink-0">
-            <SlideFill href={ESTIMATOR.homeHref} variant="primary" size="lg" arrow>
-              Open the estimator
-            </SlideFill>
-          </div>
-        </div>
       </div>
     </section>
   );

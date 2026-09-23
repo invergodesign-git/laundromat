@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -9,6 +9,7 @@ import { useIntro } from "@/components/concept/IntroContext";
 import { SlideFill } from "@/components/concept/motion/SlideFill";
 import { BOOKING } from "@/lib/booking";
 import { BUSINESS } from "@/lib/business";
+import { gsap, prefersReducedMotion } from "@/lib/gsap";
 import { isActivePath, NAV_LINKS } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +21,7 @@ import { cn } from "@/lib/utils";
 export function ConceptNav() {
   const { ready } = useIntro();
   const pathname = usePathname();
+  const logoWrapRef = useRef<HTMLAnchorElement>(null);
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
@@ -51,6 +53,33 @@ export function ConceptNav() {
       window.removeEventListener("keydown", onKey);
     };
   }, [open]);
+
+  /** On home, `/` is a no-op — scroll up and give the logo a quick bounce. */
+  const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (pathname !== "/") return;
+    e.preventDefault();
+    setOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    const target =
+      logoWrapRef.current?.querySelector("img") ?? logoWrapRef.current;
+    if (!target || prefersReducedMotion()) return;
+
+    gsap.killTweensOf(target);
+    gsap.fromTo(
+      target,
+      { scale: 1, rotate: 0 },
+      {
+        scale: 1.08,
+        rotate: -5,
+        duration: 0.2,
+        yoyo: true,
+        repeat: 1,
+        ease: "power2.out",
+        clearProps: "transform",
+      }
+    );
+  };
 
   return (
     <>
@@ -85,7 +114,13 @@ export function ConceptNav() {
         )}
       >
         <div className="mx-auto flex h-[4.5rem] max-w-[1440px] items-center gap-5 px-5 sm:h-[5.5rem] sm:px-8 lg:px-10">
-          <Link href="/" className="shrink-0" aria-label={BUSINESS.name}>
+          <Link
+            ref={logoWrapRef}
+            href="/"
+            onClick={handleLogoClick}
+            className="shrink-0 transition-transform duration-300 hover:scale-[1.03] active:scale-[0.97]"
+            aria-label={`${BUSINESS.name} — back to top`}
+          >
             <Image
               id="nav-logo"
               src="/images/logo-knockout.png"
@@ -223,13 +258,20 @@ export function ConceptNav() {
       {open && (
         <div className="fixed inset-0 z-[60] overflow-y-auto bg-foam xl:hidden">
           <div className="flex h-[calc(2.25rem+4.5rem)] items-end justify-between px-5 pb-3 sm:px-8">
-            <Image
-              src="/images/logo-knockout.png"
-              alt={BUSINESS.name}
-              width={958}
-              height={326}
-              className="h-14 w-auto"
-            />
+            <Link
+              href="/"
+              onClick={handleLogoClick}
+              className="inline-block transition-transform duration-300 hover:scale-[1.03] active:scale-[0.97]"
+              aria-label={`${BUSINESS.name} — back to top`}
+            >
+              <Image
+                src="/images/logo-knockout.png"
+                alt={BUSINESS.name}
+                width={958}
+                height={326}
+                className="h-14 w-auto"
+              />
+            </Link>
             <button
               type="button"
               onClick={() => setOpen(false)}
