@@ -5,6 +5,7 @@ import { Loader2, Navigation, Phone, Plus } from "lucide-react";
 import { useGSAP } from "@gsap/react";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
 import { AddressAutocomplete } from "@/components/concept/AddressAutocomplete";
+import { AddressMap } from "@/components/concept/AddressMap";
 import { Bubbles } from "@/components/concept/motion/Bubbles";
 import { MaskLines } from "@/components/concept/motion/MaskLines";
 import { DrawSVGPlugin, EASE, gsap, prefersReducedMotion } from "@/lib/gsap";
@@ -314,6 +315,10 @@ export function ConceptPricing() {
                     onUnavailable={handleUnavailable}
                   />
                 </div>
+
+                {selectedAddress && (
+                  <AddressMap address={selectedAddress} className="mt-4" />
+                )}
 
                 {status === "loading" ? (
                   <p className="mt-3 flex items-center gap-2 text-[0.8125rem] text-royal">

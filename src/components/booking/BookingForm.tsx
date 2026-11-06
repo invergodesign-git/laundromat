@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { AddressAutocomplete } from "@/components/concept/AddressAutocomplete";
+import { AddressMap } from "@/components/concept/AddressMap";
 import {
   BUSINESS,
   businessDatePlus,
@@ -763,6 +764,8 @@ export function BookingForm() {
                     </div>
                   )}
                 </Field>
+
+                {address && <AddressMap address={address} />}
 
                 {distanceStatus === "loading" && (
                   <p className="flex items-center gap-2 text-[0.875rem] text-ink/55">
